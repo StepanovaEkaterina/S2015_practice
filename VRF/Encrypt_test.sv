@@ -1,40 +1,67 @@
 program main_test();
 
 integer in_file, out_file;
-string line;
+string line = "special snowflake super power";
 
-logic [0:79] key = 80'hd8ad98aa04d01b630bb4;
-logic [0:79] IV = 80'h3045eefcf5307b776266;
-logic [0:92] stream_1;
-logic [0:83] stream_2;
-logic [0:110] stream_3;
+logic [0:79] key = 80'hd8ad98aa04d01b630bb4; //very random key
+logic [0:79] IV =  80'h3045eefcf5307b776266;  //very random IV
+logic [0:92] s_1; //shifting part (key)
+logic [0:83] s_2; //shifting part (IV)
+logic [0:110] s_3;//shifting part (0's)
 
-logic t_1, t_2, t_3;
+logic [0:255] test_string;
 
-function void trivium_id();
+logic t_1, t_2, t_3; //temporary registers
+logic z; //cipher reg
 
-stream_1[0:79] = key;
-stream_1[80:92] = 0;
-stream_2[0:79] = IV;
-stream_2[80:83] = 0;
-stream_3[0:107] = 0;
-stream_3[108:110] = 3'b111;
+function void trivium_id(); //initialisation
+
+s_1[0:79] = key;
+s_1[80:92] = 0;
+s_2[0:79] = IV;
+s_2[80:83] = 0;
+s_3[0:107] = 0;
+s_3[108:110] = 3'b111;
 
 for (int i = 0; i < 1152; i++)
-	begin
-		t_1 = stream_1[65]^stream_1[90]&stream_1[91]^stream_1[92]^stream_2[77];
-		t_2 = stream_2[68]^stream_2[81]&stream_2[82]^stream_2[83]^stream_3[86];
-		t_3 = stream_3[65]^stream_3[108]&stream_3[109]^stream_3[110]^stream_1[68];
+begin
+	t_1 = s_1[65]^s_1[90]&s_1[91]^s_1[92]^s_2[77];
+	t_2 = s_2[68]^s_2[81]&s_2[82]^s_2[83]^s_3[86];
+	t_3 = s_3[65]^s_3[108]&s_3[109]^s_3[110]^s_1[68];
 		
-		stream_1 = stream_1 >> 1;
-		stream_2 = stream_2 >> 1;
-		stream_3 = stream_3 >> 1;
-		
-		stream_1[0] = t_3;
-		stream_2[0] = t_1;
-		stream_3[0] = t_2;
- 	end
+	s_1 = s_1 >> 1;
+	s_2 = s_2 >> 1;
+	s_3 = s_3 >> 1;
+	
+	s_1[0] = t_3;
+	s_2[0] = t_1;
+	s_3[0] = t_2;
+ end
+endfunction;
 
+function logic trivium_c(logic enc);
+begin
+	t_1 = s_1[65]^s_1[92];
+	t_2 = s_2[68]^s_2[83];
+	t_3 = s_3[65]^s_3[110];
+
+	z = t_1^t_2^t_3;
+
+	t_1 = t_1^s_1[90]&s_1[91]^s_2[77];
+	t_2 = t_2^s_2[81]&s_2[82]^s_3[86];
+	t_3 = t_3^s_3[108]&s_3[109]^s_1[68];
+
+	s_1 = s_1 >> 1;
+	s_2 = s_2 >> 1;
+	s_3 = s_3 >> 1;
+		
+	s_1[0] = t_3;
+	s_2[0] = t_1;
+	s_3[0] = t_2;
+
+    enc=enc^z;
+	return enc;
+end
 endfunction;
 
 initial begin
@@ -58,7 +85,22 @@ initial begin
 	$fclose(in_file);
 	$fclose(out_file);
 	*/
+	
+	test_string = line;
+	$display("%s", test_string);
+	
 	trivium_id();
-	$display(stream_1);
+	for (int i=0; i<256; i++)
+	begin
+		test_string[i]=trivium_c(test_string[i]);
+	end
+	$display("%s", test_string);
+	
+	trivium_id();
+	for (int i=0; i<256; i++)
+	begin
+		test_string[i]=trivium_c(test_string[i]);
+	end
+	$display("%s", test_string);
 end
 endprogram
