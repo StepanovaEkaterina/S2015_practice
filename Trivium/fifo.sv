@@ -8,9 +8,9 @@ module fifo
 	output logic [7:0] dout,
 	output logic [1:0] condition);
 
-logic [5:0] tail; //�����
-logic [5:0] head; //������
-logic [5:0] count; //������� ���������
+logic [7:0] tail; //�����
+logic [7:0] head; //������
+logic [7:0] count; //������� ���������
 
 logic [255:0][7:0] fifomem; //������ ������
 
@@ -67,9 +67,9 @@ always_ff@(posedge clk, negedge rst)
 		endcase
 
 always_comb
-	if (count == 5'b00000) //FIFO IS EMPTY
+	if (count == 8'b00000000) //FIFO IS EMPTY
 		condition=2'b00;
-	else if (count ==5'b100100) //FIFO IS FULL
+	else if (count ==8'b11111111) //FIFO IS FULL
 			condition=2'b11;			
 
 endmodule
