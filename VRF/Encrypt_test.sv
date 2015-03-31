@@ -11,6 +11,7 @@ logic [0:110] s_3;//shifting part (0's)
 logic [0:7] middle_string;
 
 logic t_1, t_2, t_3; //temporary registers
+logic [0:7] t1,t2,t3,zo;
 logic z; //cipher reg
 
 function void trivium_id(); //initialisation
@@ -63,6 +64,39 @@ begin
 end
 endfunction;
 
+function logic [0:7] trivium_oct(logic [0:7] enc);
+
+for(int i = 0; i <8; i++)
+begin
+	t1[i] = s_1[65-i]^s_1[92-i];
+	t2[i] = s_2[68-i]^s_2[83-i];
+	t3[i] = s_3[65-i]^s_3[110-i];
+	
+	zo[i] = t1[i]^t2[i]^t3[i];
+end
+
+for(int i = 0; i<8; i++)
+begin
+	t1[i] = t_1^s_1[90-i]&s_1[91-i]^s_2[77-i];
+	t2[i] = t_2^s_2[81-i]&s_2[82-i]^s_3[86-i];
+	t3[i] = t_3^s_3[108-i]&s_3[109-i]^s_1[68-i];
+	
+	enc[i]=enc[i]^zo[i];
+end
+
+s_1 = s_1 >> 8;
+s_2 = s_2 >> 8;
+s_3 = s_3 >> 8;
+
+s_1[0:7] = t3;
+s_2[0:7] = t1;
+s_3[0:7] = t2;
+
+return enc;
+endfunction;
+
+
+
 initial begin
 	trivium_id(); 
 //Opening files #######################################
@@ -84,10 +118,13 @@ initial begin
 	while(!$feof(in_file))
 		begin
 		$fread(middle_string,in_file);
+		/*
 		for(int i = 0; i < 8; i++)
 		begin
 			middle_string[i]=trivium_c(middle_string[i]);
 		end
+		*/
+		middle_string = trivium_oct(middle_string);
 		$fwrite(out_file,"%s",middle_string);
 		end
 	
@@ -103,10 +140,13 @@ initial begin
 	while(!$feof(out_file))
 	begin
 		$fread(middle_string,out_file);
+		/*
 		for(int i = 0; i < 8; i++)
 		begin
 			middle_string[i]=trivium_c(middle_string[i]);
 		end
+		*/
+		middle_string = trivium_oct(middle_string);
 		$fwrite(control_file,"%s",middle_string);
 		end
 	
