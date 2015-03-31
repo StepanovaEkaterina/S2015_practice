@@ -2,11 +2,15 @@ program main_test();
 
 integer in_file, out_file, control_file;
 
-logic [0:79] key = 80'hd8ad98aa04d01b630bb4; //very random key
-logic [0:79] IV =  80'h3045eefcf5307b776266;  //very random IV
+//logic [0:79] key = 80'hd8ad98aa04d01b630bb4; //very random key
+//logic [0:79] IV =  80'h3045eefcf5307b776266;  //very random IV
+logic [0:79] key =	 80'h00000000000000000000;
+logic [0:79] IV =  	 80'h00000000000000000000;
 logic [0:92] s_1; //shifting part (key)
 logic [0:83] s_2; //shifting part (IV)
 logic [0:110] s_3;//shifting part (0's)
+
+logic [0:7] total_bits [128];
 
 logic [0:7] middle_string;
 
@@ -92,7 +96,7 @@ s_1[0:7] = t3;
 s_2[0:7] = t1;
 s_3[0:7] = t2;
 
-return enc;
+return enc; //
 endfunction;
 
 
@@ -152,6 +156,12 @@ initial begin
 	
 	$fclose(out_file);
 	$fclose(control_file);
+	
+	trivium_id();
+	for(int i = 0; i < 128; i++)
+	begin
+			total_bits[i]=trivium_oct(8'b00000000);
+	end
 
 end
 endprogram
