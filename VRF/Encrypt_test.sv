@@ -1,167 +1,69 @@
-program main_test();
+program cipher_test();
 
-integer in_file, out_file, control_file;
+logic [0:79] key = 80'h00000000000000000000;
+logic [0:79] IV  = 80'h00000000000000000000;
 
-//logic [0:79] key = 80'hd8ad98aa04d01b630bb4; //very random key
-//logic [0:79] IV =  80'h3045eefcf5307b776266;  //very random IV
-logic [0:79] key =	 80'h00000000000000000000;
-logic [0:79] IV =  	 80'h00000000000000000000;
-logic [0:92] s_1; //shifting part (key)
-logic [0:83] s_2; //shifting part (IV)
-logic [0:110] s_3;//shifting part (0's)
+logic [0:287] s;
+logic z;
 
-logic [0:7] total_bits [128];
+logic [0:7] allbit [256];
 
-logic [0:7] middle_string;
+logic t1,t2,t3;
 
-logic t_1, t_2, t_3; //temporary registers
-logic [0:7] t1,t2,t3,zo;
-logic z; //cipher reg
-
-function void trivium_id(); //initialisation
-
-s_1[0:79] = key;
-s_1[80:92] = 0;
-s_2[0:79] = IV;
-s_2[80:83] = 0;
-s_3[0:107] = 0;
-s_3[108:110] = 3'b111;
-
-for (int i = 0; i < 1152; i++)
+function void trivium_init();
+s[0:79] = key;
+s[80:92] = 0;
+s[93:172] = IV;
+s[173:284] = 0;
+s[285:287] = 3'b111;
+for (int i = 0; i<1152; i++)
 begin
-	t_1 = s_1[65]^s_1[90]&s_1[91]^s_1[92]^s_2[77];
-	t_2 = s_2[68]^s_2[81]&s_2[82]^s_2[83]^s_3[86];
-	t_3 = s_3[65]^s_3[108]&s_3[109]^s_3[110]^s_1[68];
+	t1 = s[65]^s[90]&s[91]^s[92]^s[170];
+	t2 = s[161]^s[174]&s[175]^s[176]^s[263];
+	t3 = s[242]^s[285]&s[286]^s[287]^s[68];
 		
-	s_1 = s_1 >> 1;
-	s_2 = s_2 >> 1;
-	s_3 = s_3 >> 1;
+	s[0:92] = s[0:92] >> 1;
+	s[93:176] = s[93:176] >> 1;
+	s[177:287] = s[177:287] >> 1;
 	
-	s_1[0] = t_3;
-	s_2[0] = t_1;
-	s_3[0] = t_2;
- end
-endfunction;
-
-function logic trivium_c(logic enc);
-begin
-	t_1 = s_1[65]^s_1[92];
-	t_2 = s_2[68]^s_2[83];
-	t_3 = s_3[65]^s_3[110];
-
-	z = t_1^t_2^t_3;
-
-	t_1 = t_1^s_1[90]&s_1[91]^s_2[77];
-	t_2 = t_2^s_2[81]&s_2[82]^s_3[86];
-	t_3 = t_3^s_3[108]&s_3[109]^s_1[68];
-
-	s_1 = s_1 >> 1;
-	s_2 = s_2 >> 1;
-	s_3 = s_3 >> 1;
-		
-	s_1[0] = t_3;
-	s_2[0] = t_1;
-	s_3[0] = t_2;
-
-    enc=enc^z;
-	return enc;
+	s[0] = t3;
+	s[93] = t1;
+	s[177] = t2;
 end
 endfunction;
 
-function logic [0:7] trivium_oct(logic [0:7] enc);
+function logic trivium_bit(logic data);
+t1 = s[65]^s[92];
+t2 = s[161]^s[176];
+t3 = s[242]^s[287];
 
-for(int i = 0; i <8; i++)
-begin
-	t1[i] = s_1[65-i]^s_1[92-i];
-	t2[i] = s_2[68-i]^s_2[83-i];
-	t3[i] = s_3[65-i]^s_3[110-i];
+z = t1^t2^t3;
+
+t1 = t1^s[90]&s[91]^s[170];
+t2 = t2^s[174]&s[175]^s[263];
+t3 = t3^s[285]&s[286]^s[68];
+
+s[0:92] = s[0:92] >> 1;
+s[93:176] = s[93:176] >> 1;
+s[177:287] = s[177:287] >> 1;
 	
-	zo[i] = t1[i]^t2[i]^t3[i];
-end
+s[0] = t3;
+s[93] = t1;
+s[177] = t2;
 
-for(int i = 0; i<8; i++)
-begin
-	t1[i] = t_1^s_1[90-i]&s_1[91-i]^s_2[77-i];
-	t2[i] = t_2^s_2[81-i]&s_2[82-i]^s_3[86-i];
-	t3[i] = t_3^s_3[108-i]&s_3[109-i]^s_1[68-i];
-	
-	enc[i]=enc[i]^zo[i];
-end
-
-s_1 = s_1 >> 8;
-s_2 = s_2 >> 8;
-s_3 = s_3 >> 8;
-
-s_1[0:7] = t3;
-s_2[0:7] = t1;
-s_3[0:7] = t2;
-
-return enc; //
-endfunction;
-
-
+data=data^z;
+return z; //FIX ME!
+endfunction
 
 initial begin
-	trivium_id(); 
-//Opening files #######################################
-	in_file = $fopen("initial.txt","rb");
-	if(in_file == 0) begin
-		$display("Unable to open file.");
-	end
-	
-	out_file = $fopen("encrypted.txt","wb");
-	if(out_file == 0) begin
-		$display("Unable to open file.");
-	end
-	
-	control_file = $fopen("result.txt","wb");
-	if(out_file == 0) begin
-		$display("Unable to open file.");
-	end
-//Opening files #######################################
-	while(!$feof(in_file))
-		begin
-		$fread(middle_string,in_file);
-		/*
-		for(int i = 0; i < 8; i++)
-		begin
-			middle_string[i]=trivium_c(middle_string[i]);
-		end
-		*/
-		middle_string = trivium_oct(middle_string);
-		$fwrite(out_file,"%s",middle_string);
-		end
-	
-	$fclose(in_file);
-	$fclose(out_file);
-	trivium_id();
-	
-	out_file = $fopen("encrypted.txt","rb");
-	if(out_file == 0) begin
-		$display("Unable to open file.");
-	end
-	
-	while(!$feof(out_file))
+trivium_init();
+for(int i = 0; i<256; i++)
+begin
+	for(int j = 0; j<8; j++)
 	begin
-		$fread(middle_string,out_file);
-		/*
-		for(int i = 0; i < 8; i++)
-		begin
-			middle_string[i]=trivium_c(middle_string[i]);
-		end
-		*/
-		middle_string = trivium_oct(middle_string);
-		$fwrite(control_file,"%s",middle_string);
-		end
-	
-	$fclose(out_file);
-	$fclose(control_file);
-	
-	trivium_id();
-	for(int i = 0; i < 128; i++)
-	begin
-			total_bits[i]=trivium_oct(8'b00000000);
+		allbit[i][j] = trivium_bit(0);
 	end
+end
 
 end
 endprogram
