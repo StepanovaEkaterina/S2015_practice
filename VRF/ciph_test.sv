@@ -3,21 +3,25 @@
 program ciph_test(
 output logic clk,
 output logic rst,
+output logic tr_key,
 output logic [7:0] data,
 output logic read,
 output logic st_dat,
 output logic st_key,
 
+
 input logic [7:0] get_data
 );
 
-logic [0:79] key = 80'h00000000000000000000;
+logic [0:79] key = 80'hd8ad98aa04d01b630bb4;
 logic [0:79] IV  = 80'h00000000000000000000;
 
 logic [0:287] s;
 
 logic [0:7] t1,t2,t3,z; //bits
 logic tb1, tb2, tb3, zb;//bytes
+
+int k_num;
 
 //initialise
 function void trivium_init();
@@ -101,6 +105,7 @@ endfunction
 initial begin
 rst = 1;
 clk = 0;
+k_num = 0;
 trivium_init();
 	fork
 	
@@ -111,6 +116,20 @@ trivium_init();
 	
 	forever begin
 	#8 clk=~clk;
+	end
+	
+	begin
+	#100
+	st_key = 1;
+	while (k_num < 80)
+		begin
+		@ (posedge clk)
+		begin
+			tr_key = key[k_num];
+			k_num++;
+		end
+		end
+	st_key = 0;
 	end
 	
 	join
