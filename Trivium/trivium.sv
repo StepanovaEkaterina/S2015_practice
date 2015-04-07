@@ -101,10 +101,6 @@ begin
 	reg_str_1<=0;
 	reg_str_2<=0;
 	reg_str_3<=0;
-	z<=0;
-	t_1<=0;
-	t_2<=0;
-	t_3<=0;
 	cnt_init<=0;
 	err_cnt<=0;
 	key_cnt<=0;
@@ -159,10 +155,6 @@ begin
 		reg_str_1<=reg_str_1;
 		reg_str_2<=reg_str_2;
 		reg_str_3<=reg_str_3;
-		z<=z;
-		t_1<=t_1;
-		t_2<=t_2;
-		t_3<=t_3;
 		cnt_init<=cnt_init;
 		err_cnt<=err_cnt;
 		key_cnt<=key_cnt;
