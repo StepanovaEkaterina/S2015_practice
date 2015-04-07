@@ -1,13 +1,17 @@
-//написать шифрование.
+//написать шифрование. что я имел в виду?
+//написать признаковый регистр.
+//написать сигналы для буфера.
+//Написать топ, блеать.
 module Trivium
 (	input logic clk,
 	input logic rst,
 	input logic key,
-	input logic data,
+	input logic [7:0] data,
 	input logic strob_data,
 	input logic strob_key,
 	
-	output logic [7:0] stream);
+	output logic [7:0] stream,
+	output logic wt_sgn);
 
 logic [92:0] reg_str_1;
 logic [83:0] reg_str_2;
@@ -20,11 +24,11 @@ logic [63:0] err_cnt;//2^64
 logic [6:0] key_cnt;
 logic [2:0] data_cnt;
 
-logic [0:7] data_reg;
+logic [7:0] data_reg;
 logic [0:79] key_reg;
  
 
-enum [8:0] {NoKey, GetKey, KeyOK, Init, Wait_Data, GetData, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
+enum [8:0] {NoKey, GetKey, KeyOK, Init, Wait_Data, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
 
 always_comb
 begin
@@ -63,21 +67,15 @@ begin
 	begin
 		if (strob_data)
 		begin
-			nxt=GetData;
-			data_reg[0]=data;
+			nxt=Moving_Secret;
+			data_reg=data;
 		end
 		else
 			nxt=Wait_Data;
 	end
-	GetData:
-	begin
-		if (data_cnt<111)
-			nxt=GetData;
-		else
-			nxt=Moving_Secret;
-	end
 	Moving_Secret:
 	begin
+		wt_sgn<=1;
 		if (err_cnt)
 			nxt=NoKey;
 	end
@@ -117,20 +115,8 @@ begin
 		reg_str_3<={reg_str_3[109:0],reg_str_2[68]^reg_str_2[83]^reg_str_2[81]&reg_str_2[82]^reg_str_3[86]};
 		cnt_init<=cnt_init+1;
 	end
-	GetData:
-	begin
-		data_reg<={data_reg[1:0],data};
-		data_cnt<=data_cnt+1;
-	end
 	Moving_Secret:
 	begin
-		for(int i=0;i<8;i++)
-		begin
-			z[i]<=reg_str_1[65-i]^reg_str_1[92-i]^reg_str_2[68-i]^reg_str_2[83-i]^reg_str_3[65-i]^reg_str_3[110-i];
-			t_1[i]<=reg_str_1[65-i]^reg_str_1[92-i]^reg_str_1[90-i]&reg_str_1[91-i]^reg_str_2[78-i];
-			t_2[i]<=reg_str_2[68-i]^reg_str_2[83-i]^reg_str_2[81-i]&reg_str_2[82-i]^reg_str_3[86-i];
-			t_3[i]<=reg_str_3[65-i]^reg_str_3[110-i]^reg_str_3[108-i]&reg_str_3[109-i]^reg_str_1[68-i];
-		end
 		reg_str_1<={reg_str_1[84:0],t_1};
 		reg_str_2<={reg_str_2[75:0],t_2};
 		reg_str_3<={reg_str_1[102:0],t_3};
@@ -150,3 +136,14 @@ begin
 end
 
 endmodule	
+
+always_comb
+begin
+	for(int i=0;i<8;i++)
+		begin
+			z[i]=reg_str_1[65-i]^reg_str_1[92-i]^reg_str_2[68-i]^reg_str_2[83-i]^reg_str_3[65-i]^reg_str_3[110-i];
+			t_1[i]=reg_str_1[65-i]^reg_str_1[92-i]^reg_str_1[90-i]&reg_str_1[91-i]^reg_str_2[78-i];
+			t_2[i]=reg_str_2[68-i]^reg_str_2[83-i]^reg_str_2[81-i]&reg_str_2[82-i]^reg_str_3[86-i];
+			t_3[i]=reg_str_3[65-i]^reg_str_3[110-i]^reg_str_3[108-i]&reg_str_3[109-i]^reg_str_1[68-i];
+		end
+end
