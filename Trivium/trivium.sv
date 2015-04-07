@@ -106,15 +106,15 @@ begin
 	wt_sgn<=0;
 	unique case(prev)
 	NoKey:
-		key_reg<={key,key_reg[78:0]};
+		key_reg<={key_reg[78:0],key};
 	GetKey:
 	begin
-		key_reg<={key,key_reg[78:0]};
+		key_reg<={key_reg[78:0],key};
 		key_cnt<=key_reg+1;
 	end
 	KeyOK:
 	begin
-		reg_str_1[76:0]<=key_reg[3:79];
+		reg_str_1[76:0]<=key_reg[79:3];
 		reg_str_2[79:0]<=vector;
 		reg_str_3[79:77]<=3'b111;
 	end
