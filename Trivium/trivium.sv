@@ -24,7 +24,7 @@ logic [63:0] err_cnt;//2^64
 logic [6:0] key_cnt;
 
 logic [7:0] data_reg;
-logic [0:79] key_reg;
+logic [79:0] key_reg;
  
 
 enum {NoKey, GetKey, KeyOK, Init, Wait_Data, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
@@ -35,10 +35,7 @@ begin
 	NoKey:
 	begin
 		if (strob_key)
-		begin
 			nxt=GetKey;
-			key_reg[0]=key;
-		end
 		else
 			nxt=NoKey;
 		if (data)
@@ -65,10 +62,7 @@ begin
 	Wait_Data:
 	begin
 		if (strob_data)
-		begin
 			nxt=Moving_Secret;
-			data_reg=data;
-		end
 		else
 			nxt=Wait_Data;
 	end
@@ -111,9 +105,11 @@ begin
   begin
 	wt_sgn<=0;
 	unique case(prev)
+	NoKey:
+		key_reg<={key,key_reg[78:0]};
 	GetKey:
 	begin
-		key_reg<={key_reg[0:78],key};
+		key_reg<={key,key_reg[78:0]};
 		key_cnt<=key_reg+1;
 	end
 	KeyOK:
@@ -122,6 +118,8 @@ begin
 		reg_str_2[79:0]<=vector;
 		reg_str_3[79:77]<=3'b111;
 	end
+	Wait_Data:
+		data_reg<=data;
 	Init:
 	begin
 		reg_str_1<={reg_str_1[91:0],reg_str_3[65]^reg_str_3[110]^reg_str_3[108]&reg_str_3[109]^reg_str_1[68]};
