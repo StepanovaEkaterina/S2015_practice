@@ -69,8 +69,6 @@ always_comb
 	if (count == 8'b00000000) //FIFO IS EMPTY
 		condition=2'b00;
 	else if (count ==8'b11111111) //FIFO IS FULL
-			condition=2'b11;
-		else
-			condition=2'b10;
+			condition=2'b11;			
 
 endmodule

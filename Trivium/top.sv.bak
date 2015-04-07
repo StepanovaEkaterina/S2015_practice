@@ -1,7 +1,6 @@
 module top
 (	input logic CLK,
 	input logic RST,
-	input logic KEY,
 	input logic [7:0] DATA,
 	input logic READ,
 	input logic STB_DATA,
@@ -14,8 +13,7 @@ module top
 Trivium ENCR_DEV
 (	.clk(CLK),
 	.rst(RST),
-	.key(KEY),
-	.data(DATA),
+	.din(DATA),
 	.strob_data(STB_DATA),
 	.strob_key(STB_KEY),
 	
