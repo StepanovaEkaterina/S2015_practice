@@ -130,7 +130,7 @@ begin
 		key_reg<={key_reg[78:0],key};
 	GetKey:
 	begin
-		if (strob_key==1)
+		if (key_cnt<1010000)
 		begin
 			key_reg<={key_reg[78:0],key};
 			key_cnt<=key_cnt+1;
