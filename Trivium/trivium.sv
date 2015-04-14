@@ -1,7 +1,7 @@
 //написать шифрование. что я имел в виду?
 //написать признаковый регистр.
 //написать сигналы для буфера. Ограничить чтение из буфера, а как?
-//ФАКФАКФАК переписать состояния для 
+//описать состояние ошибки при неполном/переполненом ключе 
 
 module Trivium
 (	input logic clk,
@@ -59,10 +59,10 @@ begin
 	end
 	GetKey:
 	begin
-		if (key_cnt<7'b1010000)
-			nxt=GetKey;
-		else
+		if (!strob_key)
 			nxt=KeyOK;
+		else 
+			nxt=GetKey;
 	end
 	KeyOK:
 		nxt=Init;
@@ -130,8 +130,16 @@ begin
 		key_reg<={key_reg[78:0],key};
 	GetKey:
 	begin
-		key_reg<={key_reg[78:0],key};
-		key_cnt<=key_reg+1;
+		if (strob_key==1)
+		begin
+			key_reg<={key_reg[78:0],key};
+			key_cnt<=key_cnt+1;
+		end
+		else
+		begin
+			key_reg<=key_reg;
+			key_cnt<=key_cnt;
+		end
 	end
 	KeyOK:
 	begin

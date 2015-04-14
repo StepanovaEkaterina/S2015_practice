@@ -105,13 +105,17 @@ endfunction
 initial begin
 rst = 1;
 clk = 0;
-k_num = 0;
 trivium_init();
 	fork
 	
 	begin
-	#8 rst = 1;
 	#8 rst = 0;
+	st_key = 0;
+	st_dat = 0;
+	data = 0;
+	tr_key = 0;
+	read = 0;
+	#8 rst = 1;
 	end
 	
 	forever begin
@@ -120,15 +124,19 @@ trivium_init();
 	
 	begin
 	#100
-	st_key = 1;
+	@ (posedge clk)
+	#1 st_key = 1;
+	k_num = 0;
 	while (k_num < 80)
 		begin
 		@ (posedge clk)
 		begin
+			#1
 			tr_key = key[k_num];
 			k_num++;
 		end
 		end
+	
 	st_key = 0;
 	end
 	
