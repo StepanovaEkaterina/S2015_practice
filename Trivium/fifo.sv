@@ -5,12 +5,13 @@ module fifo
 	input logic read,
 	input logic write,
 	
-	output logic [7:0] dout);
+	output logic [7:0] dout,
+	output logic [1:0] condition);
 
 logic [7:0] tail; //�����
 logic [7:0] head; //������
 logic [7:0] count; //������� ���������
-logic [1:0] condition;
+
 logic [255:0][7:0] fifomem; //������ ������
 
 //Read from fifo

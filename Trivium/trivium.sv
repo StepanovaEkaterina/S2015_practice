@@ -1,7 +1,8 @@
 //написать шифрование. что я имел в виду?
 //написать признаковый регистр.
-//написать сигналы для буфера.
-//Написать топ, блеать.
+//написать сигналы для буфера. Ограничить чтение из буфера, а как?
+//ФАКФАКФАК переписать состояния для 
+
 module Trivium
 (	input logic clk,
 	input logic rst,
@@ -9,9 +10,11 @@ module Trivium
 	input logic [7:0] data,
 	input logic strob_data,
 	input logic strob_key,
+	input logic [1:0] fifo_cnd,
 	
 	output logic [7:0] stream,
-	output logic wt_sgn);
+	output logic wt_sgn,
+	output logic [7:0] sign_reg);
 
 logic [92:0] reg_str_1;
 logic [83:0] reg_str_2;
@@ -20,14 +23,24 @@ logic [79:0] vector=80'h00000000000000000000; //Вектор инициализ�
 logic [7:0] z, t_1, t_2, t_3;
 
 logic [11:0] cnt_init;//Счетчик инициализации
-logic [63:0] err_cnt;//2^64
-logic [6:0] key_cnt;
+logic [63:0] err_cnt; //2^64
+logic [6:0] key_cnt;  //Счетчик элементов ключа
+logic [8:0] encry_cnt; //Счетчик зашифрованных данных
 
-logic [7:0] data_reg;
-logic [79:0] key_reg;
+logic [7:0] data_reg; //Регистр входных данных
+logic [79:0] key_reg; //Регистр ключа шифрования
  
 
-enum {NoKey, GetKey, KeyOK, Init, Wait_Data, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
+enum logic [5:0] {NoKey, GetKey, KeyOK, Init, Wait_Data, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
+
+always_ff@(posedge clk, negedge rst)
+begin
+	if (!rst)
+		prev<=NoKey;
+	else
+		prev<=nxt;
+end
+
 
 always_comb
 begin
@@ -37,15 +50,16 @@ begin
 		if (strob_key)
 			nxt=GetKey;
 		else
-			nxt=NoKey;
-		if (data)
-			nxt=Total_RST;
-		if (strob_data)
-			nxt=Total_RST;
+		begin
+			if (strob_data)
+				nxt=Total_RST;
+			else
+			  nxt=NoKey;
+		end
 	end
 	GetKey:
 	begin
-		if (key_cnt<1010000)
+		if (key_cnt<7'b1010000)
 			nxt=GetKey;
 		else
 			nxt=KeyOK;
@@ -70,12 +84,18 @@ begin
 	begin
 		if (err_cnt)
 			nxt=NoKey;
+		else
+			if (encry_cnt==8'b11111111)
+				nxt=Secret_Ready;
+			else
+				nxt=Moving_Secret;
 	end
 	Secret_Ready:
 	begin
-		nxt=Wait_Data;
-		if (strob_data)
-			nxt=Error;
+		if (fifo_cnd==2'b00)
+			nxt=Wait_Data;
+		else
+			nxt=Secret_Ready;
 	end
 	Error:
 		nxt=NoKey;
@@ -98,6 +118,7 @@ begin
 	cnt_init<=0;
 	err_cnt<=0;
 	key_cnt<=0;
+	encry_cnt<=0;
 	data_reg<=0;
 	key_reg<=0;
   end
@@ -135,6 +156,7 @@ begin
 		stream<=data_reg^z;
 		wt_sgn<=1;
 		err_cnt<=err_cnt+1;
+		encry_cnt<=encry_cnt+1;
 	end
 	Total_RST:
 	begin
@@ -145,6 +167,7 @@ begin
 		stream<=0;
 		cnt_init<=0;
 		err_cnt<=0;
+		encry_cnt<=0;
 	end
 	default:
 	begin
@@ -156,6 +179,7 @@ begin
 		cnt_init<=cnt_init;
 		err_cnt<=err_cnt;
 		key_cnt<=key_cnt;
+		encry_cnt<=encry_cnt;
 		data_reg<=data_reg;
 		key_reg<=key_reg;
 	end
