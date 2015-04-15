@@ -106,7 +106,8 @@ begin
 	end
 	Moving_Secret:
 	begin
-		if (err_cnt>=2**64)
+		//if (err_cnt>=64'h_ff_ff_ff_ff_ff_ff_ff_ff)
+		if (err_cnt>=2**64-1)
 			nxt=NoKey;
 		else
 			if (encry_cnt==8'b11111111)
