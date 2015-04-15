@@ -2,10 +2,10 @@ module ciph_top();
 
 logic clk,rst;
 logic key;
-logic [0:7] data;
+logic [7:0] data;
 logic read,st_dat,st_key;
 
-logic [0:7] g_dat;
+logic [7:0] g_dat, sign_reg;
 
 top TRIVIUM (
 	.CLK(clk),
@@ -16,7 +16,8 @@ top TRIVIUM (
 	.STB_DATA(st_dat),
 	.STB_KEY(st_key),
 	
-	.DATA_OUT(g_dat)
+	.DATA_OUT(g_dat),
+	.SIGN_REG(sign_reg)
 );
 
 ciph_test TRV_TST (
@@ -28,7 +29,8 @@ ciph_test TRV_TST (
 	.st_dat(st_dat),
 	.st_key(st_key),
 
-	.get_data(g_dat)
+	.get_data(g_dat),
+	.sign_reg(sign_reg)
 );
 
 endmodule

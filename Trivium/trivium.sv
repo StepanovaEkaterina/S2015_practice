@@ -106,7 +106,8 @@ begin
 	end
 	Moving_Secret:
 	begin
-		if (err_cnt>=2**64)
+		//if (err_cnt>=64'h_ff_ff_ff_ff_ff_ff_ff_ff)
+		if (err_cnt>=2**64-1)
 			nxt=NoKey;
 		else
 			if (encry_cnt==8'b11111111)
@@ -167,9 +168,9 @@ begin
 	end
 	KeyOK:
 	begin
-		reg_str_1[76:0]<=key_reg[79:3];
+		reg_str_1[77:0]<=key_reg[79:2];
 		reg_str_2[79:0]<=vector;
-		reg_str_3[79:77]<=3'b111;
+		reg_str_3[110:108]<=3'b111;
 	end
 	Wait_Data:
 		data_reg<=data;
