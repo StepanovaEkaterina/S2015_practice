@@ -106,7 +106,7 @@ begin
 	end
 	Moving_Secret:
 	begin
-		if (err_cnt>=2**64)
+		if (err_cnt>=2**64-1)
 			nxt=NoKey;
 		else
 			if (encry_cnt==8'b11111111)
@@ -176,7 +176,7 @@ begin
 	Init:
 	begin
 		reg_str_1<={reg_str_1[91:0],reg_str_3[65]^reg_str_3[110]^reg_str_3[108]&reg_str_3[109]^reg_str_1[68]};
-		reg_str_2<={reg_str_2[82:0],reg_str_1[65]^reg_str_1[92]^reg_str_1[90]&reg_str_1[91]^reg_str_2[78]};
+		reg_str_2<={reg_str_2[82:0],reg_str_1[65]^reg_str_1[92]^reg_str_1[90]&reg_str_1[91]^reg_str_2[77]};
 		reg_str_3<={reg_str_3[109:0],reg_str_2[68]^reg_str_2[83]^reg_str_2[81]&reg_str_2[82]^reg_str_3[86]};
 		cnt_init<=cnt_init+1;
 	end
@@ -224,7 +224,7 @@ begin
   for(int i=0;i<8;i++)
     begin
       z[i]=reg_str_1[65-i]^reg_str_1[92-i]^reg_str_2[68-i]^reg_str_2[83-i]^reg_str_3[65-i]^reg_str_3[110-i];
-      t_1[i]=reg_str_1[65-i]^reg_str_1[92-i]^reg_str_1[90-i]&reg_str_1[91-i]^reg_str_2[78-i];
+      t_1[i]=reg_str_1[65-i]^reg_str_1[92-i]^reg_str_1[90-i]&reg_str_1[91-i]^reg_str_2[77-i];
       t_2[i]=reg_str_2[68-i]^reg_str_2[83-i]^reg_str_2[81-i]&reg_str_2[82-i]^reg_str_3[86-i];
       t_3[i]=reg_str_3[65-i]^reg_str_3[110-i]^reg_str_3[108-i]&reg_str_3[109-i]^reg_str_1[68-i];
     end
