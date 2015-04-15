@@ -1,37 +1,32 @@
-//написать шифрование. что я имел в виду?
-//написать признаковый регистр.
-//написать сигналы для буфера. Ограничить чтение из буфера, а как?
 //описать состояние ошибки при неполном/переполненом ключе 
-
 module Trivium
-(	input logic clk,
-	input logic rst,
-	input logic key,
-	input logic [7:0] data,
-	input logic strob_data,
-	input logic strob_key,
-	input logic [1:0] fifo_cnd,
+(	input logic 			clk,
+	input logic 			rst,
+	input logic 			key,
+	input logic 			[7:0] data,
+	input logic 			strob_data,
+	input logic 			strob_key,
+	input logic 			[1:0] fifo_cnd,
 	
-	output logic [7:0] stream,
-	output logic wt_sgn,
-	output logic [7:0] sign_reg);
+	output logic 			[7:0] stream,
+	output logic 			wt_sgn,
+	output logic 			[7:0] sign_reg);
 
-logic [92:0] reg_str_1;
-logic [83:0] reg_str_2;
-logic [110:0] reg_str_3; 
-logic [79:0] vector=80'h00000000000000000000; //Вектор инициализации
-logic [7:0] z, t_1, t_2, t_3;
-
-logic [11:0] cnt_init;//Счетчик инициализации
-logic [63:0] err_cnt; //2^64
-logic [6:0] key_cnt;  //Счетчик элементов ключа
-logic [8:0] encry_cnt; //Счетчик зашифрованных данных
-
-logic [7:0] data_reg; //Регистр входных данных
-logic [79:0] key_reg; //Регистр ключа шифрования
- 
-
-enum logic [5:0] {NoKey, GetKey, KeyOK, Init, Wait_Data, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
+	logic [92:0] 			reg_str_1;
+	logic [83:0] 			reg_str_2;
+	logic [110:0] 			reg_str_3; 
+	logic [79:0] 			vector=80'h00000000000000000000; //Вектор инициализации
+	logic [7:0] 			z, t_1, t_2, t_3;
+			
+	logic [11:0] 			cnt_init;//Счетчик инициализации
+	logic [63:0] 			err_cnt; //2^64
+	logic [6:0] 			key_cnt;  //Счетчик элементов ключа
+	logic [8:0] 			encry_cnt; //Счетчик зашифрованных данных
+			
+	logic [7:0] 			data_reg; //Регистр входных данных
+	logic [79:0] 			key_reg; //Регистр ключа шифрования
+		
+	enum logic [5:0] {NoKey, GetKey, KeyOK, Init, Wait_Data, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
 
 always_ff@(posedge clk, negedge rst)
 begin
@@ -40,7 +35,36 @@ begin
 	else
 		prev<=nxt;
 end
-
+always_ff@(posedge clk, negedge rst)
+begin
+	if (!rst)
+		sign_reg<=8'b00000000;
+	else
+	begin
+		unique case (prev)
+		NoKey:
+			sign_reg<=8'b00000000;
+		GetKey:
+			sign_reg<=8'b00000000;
+		KeyOK:
+			sign_reg<=8'b00000001;
+		Init:
+			sign_reg<=8'b00000010;
+		Wait_Data:
+			sign_reg<=8'b00000100;
+		Moving_Secret:
+			sign_reg<=8'b00001000;
+		Secret_Ready:
+			sign_reg<=8'b00010000;
+		Error:
+			sign_reg<=8'b00100000;
+		Total_RST:
+			sign_reg<=8'b01000000;
+		default:
+		    sign_reg<=8'b00000000;
+		endcase
+	end
+end
 
 always_comb
 begin
@@ -194,6 +218,7 @@ begin
   endcase
   end
 end
+
 always_comb
 begin
   for(int i=0;i<8;i++)
@@ -204,5 +229,6 @@ begin
       t_3[i]=reg_str_3[65-i]^reg_str_3[110-i]^reg_str_3[108-i]&reg_str_3[109-i]^reg_str_1[68-i];
     end
 end
+
 endmodule	
 

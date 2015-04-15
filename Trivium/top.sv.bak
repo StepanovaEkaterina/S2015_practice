@@ -12,7 +12,7 @@ module top
 	
 	wire [7:0] STREAM;
 	wire WRITE;
-	wire CONDITION;
+	wire [1:0] CONDITION;
 	
 Trivium ENCR_DEV
 (	.clk(CLK),
