@@ -14,36 +14,34 @@ input logic [7:0] get_data,
 input logic [7:0] sign_reg
 );
 
-logic [79:0] key = 80'hd8ad98aa04d01b630bb4;
-logic [79:0] IV  = 80'h00000000000000000000;
+logic [0:79] key = 80'hd8ad98aa04d01b630bb4;
+logic [0:79] IV  = 80'h00000000000000000000;
 
-logic [287:0] s;
+logic [0:287] s;
 
-logic [7:0] t1,t2,t3,z; //bytes
-logic tb1, tb2, tb3, zb;//bits
+logic [0:7] t1,t2,t3,z; //bits
+logic tb1, tb2, tb3, zb;//bytes
 
-logic [7:0] zerobytes [256];
-logic [7:0] zerobits [256];
+logic [0:7] zerobits [256];
 
 int k_num;
 
 //initialise
 function void trivium_init();
-s[77:0] = key[79:2];
-s[92:78] = 0;
-s[172:93] = IV;
-s[284:173] = 0;
-s[287:285] = 3'b111;
-
+s[0:77] = key[2:79];
+s[78:92] = 0;
+s[93:172] = IV;
+s[173:284] = 0;
+s[285:287] = 3'b111;
 for (int i = 0; i<1152; i++)
 begin
 	t1[0] = s[65]^s[90]&s[91]^s[92]^s[170];
 	t2[0] = s[161]^s[174]&s[175]^s[176]^s[263];
 	t3[0] = s[242]^s[285]&s[286]^s[287]^s[68];
-	
-	s[92:0] = s[92:0] << 1;
-	s[176:93] = s[176:93] << 1;
-	s[287:177] = s[287:177] << 1;
+		
+	s[0:92] = s[0:92] >> 1;
+	s[93:176] = s[93:176] >> 1;
+	s[177:287] = s[177:287] >> 1;
 	
 	s[0] = t3[0];
 	s[93] = t1[0];
@@ -51,7 +49,7 @@ begin
 end
 endfunction;
 //bytewise trivium
-function logic [7:0] trivium_byte(logic [7:0] data);
+function logic [0:7] trivium_byte(logic [0:7] data);
 
 for(int i = 0; i<8; i++)
 begin
@@ -72,13 +70,13 @@ end
 
 data=data^z;
 
-s[92:0] = s[92:0] << 8;
-s[176:93] = s[176:93] << 8;
-s[287:177] = s[287:177] << 8;
+s[0:92] = s[0:92] >> 8;
+s[93:176] = s[93:176] >> 8;
+s[177:287] = s[177:287] >> 8;
 	
-s[7:0] = t3;
-s[100:93] = t1;
-s[184:177] = t2;
+s[0:7] = t3;
+s[93:100] = t1;
+s[177:184] = t2;
 
 return data;
 endfunction
@@ -94,10 +92,9 @@ tb1 = tb1^s[90]&s[91]^s[170];
 tb2 = tb2^s[174]&s[175]^s[263];
 tb3 = tb3^s[285]&s[286]^s[68];
 
-
-s[92:0] = s[92:0] << 1;
-s[176:93] = s[176:93] << 1;
-s[287:177] = s[287:177] << 1;
+s[0:92] = s[0:92] >> 1;
+s[93:176] = s[93:176] >> 1;
+s[177:287] = s[177:287] >> 1;
 	
 s[0] = tb3;
 s[93] = tb1;
@@ -107,7 +104,7 @@ data=data^zb;
 
 return data;
 endfunction
-//#####################################################################
+//###########################################################
 initial begin
 rst = 1;
 clk = 0;
@@ -115,17 +112,9 @@ trivium_init();
 
 for(int i = 0; i < 256; i++)
 begin
-	zerobytes[i] = trivium_byte(0);
+	zerobits[i] = trivium_byte(0);
 end
 
-trivium_init();
-
-for(int i = 0; i < 256; i++)
-begin
-	for(int j = 0; j < 8; j++)
-		zerobits[i][j] = trivium_bit(0);
-end
-trivium_init();
 	fork
 	
 	begin
@@ -156,7 +145,7 @@ trivium_init();
 			@ (posedge clk)
 			begin
 				#1
-				tr_key = key[79-k_num];
+				tr_key = key[k_num];
 				k_num++;
 			end
 			end
