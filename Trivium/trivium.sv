@@ -182,9 +182,9 @@ begin
 	end
 	Moving_Secret:
 	begin
-		reg_str_1<={reg_str_1[84:0],t_1};
-		reg_str_2<={reg_str_2[75:0],t_2};
-		reg_str_3<={reg_str_3[102:0],t_3};
+		reg_str_1<={reg_str_1[84:0],t_3};
+		reg_str_2<={reg_str_2[75:0],t_1};
+		reg_str_3<={reg_str_3[102:0],t_2};
 		stream<=data_reg^z;
 		wt_sgn<=1;
 		err_cnt<=err_cnt+1;
