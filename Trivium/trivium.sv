@@ -106,7 +106,7 @@ begin
 	end
 	Moving_Secret:
 	begin
-		if (err_cnt)
+		if (err_cnt>=2**64)
 			nxt=NoKey;
 		else
 			if (encry_cnt==8'b11111111)
@@ -154,7 +154,7 @@ begin
 		key_reg<={key_reg[78:0],key};
 	GetKey:
 	begin
-		if (key_cnt<1010000)
+		if (key_cnt<7'b1010000)
 		begin
 			key_reg<={key_reg[78:0],key};
 			key_cnt<=key_cnt+1;
