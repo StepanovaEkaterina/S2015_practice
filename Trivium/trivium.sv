@@ -92,7 +92,7 @@ begin
 		nxt=Init;
 	Init:
 	begin
-		if (cnt_init<11'b10010000000)
+		if (cnt_init<11'b10001111111)
 			nxt=Init;
 		else
 			nxt=Wait_Data;
@@ -177,7 +177,7 @@ begin
 	Init:
 	begin
 		reg_str_1<={reg_str_1[91:0],reg_str_3[65]^reg_str_3[110]^reg_str_3[108]&reg_str_3[109]^reg_str_1[68]};
-		reg_str_2<={reg_str_2[82:0],reg_str_1[65]^reg_str_1[92]^reg_str_1[90]&reg_str_1[91]^reg_str_2[78]};
+		reg_str_2<={reg_str_2[82:0],reg_str_1[65]^reg_str_1[92]^reg_str_1[90]&reg_str_1[91]^reg_str_2[77]};
 		reg_str_3<={reg_str_3[109:0],reg_str_2[68]^reg_str_2[83]^reg_str_2[81]&reg_str_2[82]^reg_str_3[86]};
 		cnt_init<=cnt_init+1;
 	end
