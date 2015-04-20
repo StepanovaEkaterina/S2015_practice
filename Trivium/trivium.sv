@@ -1,4 +1,5 @@
 //описать состояние ошибки при неполном/переполненом ключе 
+//KeyOK, Init, Moving_Secret
 module Trivium
 (	input logic 			clk,
 	input logic 			rst,
