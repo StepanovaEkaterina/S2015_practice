@@ -14,15 +14,18 @@ input logic [7:0] get_data,
 input logic [7:0] sign_reg
 );
 
-logic [79:0] key = 80'hd8ad98aa04d01b630bb4;
+//logic [79:0] key = 80'hd8ad98aa04d01b630bb4;
+logic [79:0] key = 80'h00000000000000000000;
 logic [79:0] IV  = 80'h00000000000000000000;
 
 logic [287:0] s;
 
 logic [7:0] t1,t2,t3,z; //trivium temporary regs
 
-logic [7:0] zerobytes [256];
+logic [7:0] zerobytes [256]; 
 logic [7:0] zerobits [256];
+
+logic [7:0] recieved [256];
 
 int k_num;
 
@@ -170,7 +173,27 @@ trivium_init();
 			#1 st_dat = 0;
 		end
 		8'h10: begin
-			$display("Recieving data \n");
+			@ (posedge clk)
+			#1 read = 1;
+			k_num = 0; //Using k_num again, don't need another variable.
+			while(k_num < 256)
+			begin @ (posedge clk)
+					begin
+					#1 recieved[k_num] = get_data;
+					k_num++;
+					end
+			end
+			#1 read = 0;
+			
+			for(int i = 0; i < 256; i++)
+			begin
+				if(zerobits[i] !=recieved[i])
+				begin
+					$display("Error at %d position of received data!",i);
+					break;
+				end
+			end
+			
 		end
 		8'h20: begin
 			$display("Generate and send new key \n");
