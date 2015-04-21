@@ -1,5 +1,7 @@
 //описать состояние ошибки при неполном/переполненом ключе 
 //KeyOK, Init, Moving_Secret
+//убрать Wait_Data
+//ошибка с последним байтом в фифо
 module Trivium
 (	input logic 			clk,
 	input logic 			rst,
@@ -18,7 +20,7 @@ module Trivium
 	logic [110:0] 			reg_str_3; 
 	logic [79:0] 			vector=80'h00000000000000000000; //Вектор инициализации
 	logic [0:7] 			t_1, t_2, t_3;
-	logic [7:0]     z;
+	logic [7:0]     		z;
 			
 	logic [11:0] 			cnt_init;//Счетчик инициализации
 	logic [63:0] 			err_cnt; //2^64
@@ -27,8 +29,9 @@ module Trivium
 			
 	logic [7:0] 			data_reg; //Регистр входных данных
 	logic [79:0] 			key_reg; //Регистр ключа шифрования
+	logic					strob_data_tmp;
 		
-	enum logic [5:0] {NoKey, GetKey, KeyOK, Init, Wait_Data, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
+	enum logic [5:0] {NoKey, GetKey, KeyOK, Init, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
 
 always_ff@(posedge clk, negedge rst)
 begin
@@ -36,6 +39,19 @@ begin
 		prev<=NoKey;
 	else
 		prev<=nxt;
+end
+always_ff@(posedge clk, negedge rst)
+begin
+	if (!rst)
+	begin
+		strob_data_tmp<=0;
+		data_reg<=0;
+	end
+	else
+	begin
+		strob_data_tmp<=strob_data;
+		data_reg<=data;
+	end
 end
 always_ff@(posedge clk, negedge rst)
 begin
@@ -52,8 +68,6 @@ begin
 			sign_reg<=8'b00000001;
 		Init:
 			sign_reg<=8'b00000010;
-		Wait_Data:
-			sign_reg<=8'b00000100;
 		Moving_Secret:
 			sign_reg<=8'b00001000;
 		Secret_Ready:
@@ -97,18 +111,10 @@ begin
 		if (cnt_init<11'b10001111111)
 			nxt=Init;
 		else
-			nxt=Wait_Data;
-	end
-	Wait_Data:
-	begin
-		if (strob_data)
 			nxt=Moving_Secret;
-		else
-			nxt=Wait_Data;
 	end
 	Moving_Secret:
 	begin
-		//if (err_cnt>=64'h_ff_ff_ff_ff_ff_ff_ff_ff)
 		if (err_cnt>=2**64-1)
 			nxt=NoKey;
 		else
@@ -120,7 +126,7 @@ begin
 	Secret_Ready:
 	begin
 		if (fifo_cnd==2'b00)
-			nxt=Wait_Data;
+			nxt=Moving_Secret;
 		else
 			nxt=Secret_Ready;
 	end
@@ -146,7 +152,6 @@ begin
 	err_cnt<=0;
 	key_cnt<=0;
 	encry_cnt<=0;
-	data_reg<=0;
 	key_reg<=0;
   end
   else
@@ -174,8 +179,6 @@ begin
 		reg_str_2[79:0]<=vector;
 		reg_str_3[110:108]<=3'b111;
 	end
-	Wait_Data:
-		data_reg<=data;
 	Init:
 	begin
 		reg_str_1<={reg_str_1[91:0], reg_str_3[65]^reg_str_3[110]^reg_str_3[108]&reg_str_3[109]^reg_str_1[68]};
@@ -185,17 +188,7 @@ begin
 	end
 	Moving_Secret:
 	begin
-		if (encry_cnt==0)
-		begin
-			reg_str_1<=reg_str_1;
-			reg_str_2<=reg_str_2;
-			reg_str_3<=reg_str_3;
-			stream<=data_reg^z;
-			wt_sgn<=1;
-			err_cnt<=err_cnt+1;
-			encry_cnt<=encry_cnt+1;
-		end
-		else
+		if (strob_data_tmp)
 		begin
 			reg_str_1<={reg_str_1[84:0],t_3};
 			reg_str_2<={reg_str_2[75:0],t_1};
@@ -205,13 +198,21 @@ begin
 			err_cnt<=err_cnt+1;
 			encry_cnt<=encry_cnt+1;
 		end
+		else
+		begin
+			reg_str_1<=reg_str_1;
+			reg_str_2<=reg_str_2;
+			reg_str_3<=reg_str_3;
+			wt_sgn<=0;
+			err_cnt<=err_cnt;
+			encry_cnt<=encry_cnt;
+		end
 	end
 	Total_RST:
 	begin
 		reg_str_1<=0;
 		reg_str_2<=0;
 		reg_str_3<=0;
-		data_reg<=0;
 		stream<=0;
 		cnt_init<=0;
 		err_cnt<=0;
@@ -228,7 +229,6 @@ begin
 		err_cnt<=err_cnt;
 		key_cnt<=key_cnt;
 		encry_cnt<=encry_cnt;
-		data_reg<=data_reg;
 		key_reg<=key_reg;
 	end
   endcase
@@ -240,7 +240,7 @@ begin
   for(int i=0;i<8;i++)
     begin
       z[i]=reg_str_1[65-i]^reg_str_1[92-i]^reg_str_2[68-i]^reg_str_2[83-i]^reg_str_3[65-i]^reg_str_3[110-i];
-      t_1[i]=reg_str_1[65-i]^reg_str_1[92-i]^ reg_str_1[90-i]& reg_str_1[91-i]^ reg_str_2[78-i];
+      t_1[i]=reg_str_1[65-i]^reg_str_1[92-i]^ reg_str_1[90-i]& reg_str_1[91-i]^ reg_str_2[77-i];
       t_2[i]=reg_str_2[68-i]^reg_str_2[83-i]^ reg_str_2[81-i]& reg_str_2[82-i]^ reg_str_3[86-i];
       t_3[i]=reg_str_3[65-i]^reg_str_3[110-i]^reg_str_3[108-i]&reg_str_3[109-i]^reg_str_1[68-i];
     end
