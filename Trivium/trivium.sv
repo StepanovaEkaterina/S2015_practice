@@ -17,7 +17,8 @@ module Trivium
 	logic [83:0] 			reg_str_2;
 	logic [110:0] 			reg_str_3; 
 	logic [79:0] 			vector=80'h00000000000000000000; //Вектор инициализации
-	logic [7:0] 			z, t_1, t_2, t_3;
+	logic [0:7] 			t_1, t_2, t_3;
+	logic [7:0]     z;
 			
 	logic [11:0] 			cnt_init;//Счетчик инициализации
 	logic [63:0] 			err_cnt; //2^64
@@ -184,9 +185,9 @@ begin
 	end
 	Moving_Secret:
 	begin
-		reg_str_1<={reg_str_1[84:0],t_3[0:7]};
-		reg_str_2<={reg_str_2[75:0],t_1[0:7]};
-		reg_str_3<={reg_str_3[102:0],t_2[0:7]};
+		reg_str_1<={reg_str_1[84:0],t_3};
+		reg_str_2<={reg_str_2[75:0],t_2};
+		reg_str_3<={reg_str_3[102:0],t_2};
 		stream<=data_reg^z;
 		wt_sgn<=1;
 		err_cnt<=err_cnt+1;
