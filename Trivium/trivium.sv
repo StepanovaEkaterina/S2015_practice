@@ -1,6 +1,5 @@
 //описать состояние ошибки при неполном/переполненом ключе 
 //KeyOK, Init, Moving_Secret
-//убрать Wait_Data
 //ошибка с последним байтом в фифо
 module Trivium
 (	input logic 			clk,
@@ -64,12 +63,12 @@ begin
 			sign_reg<=8'b00000000;
 		GetKey:
 			sign_reg<=8'b00000000;
-		KeyOK:
-			sign_reg<=8'b00000001;
-		Init:
-			sign_reg<=8'b00000010;
+		/*KeyOK:
+			sign_reg<=8'b00000001;*/
+		/*Init:
+			sign_reg<=8'b00000010;*/
 		Moving_Secret:
-			sign_reg<=8'b00001000;
+			sign_reg<=8'b00000100;
 		Secret_Ready:
 			sign_reg<=8'b00010000;
 		Error:
