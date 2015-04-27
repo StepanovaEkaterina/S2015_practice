@@ -1,6 +1,5 @@
-//описать состояние ошибки при неполном/переполненом ключе 
-//KeyOK, Init, Moving_Secret
-//ошибка с последним байтом в фифо
+//описать состояние ошибки при неполном/переполненом ключе
+//написать получение нового ключа.
 module Trivium
 (	input logic 			clk,
 	input logic 			rst,
@@ -63,18 +62,14 @@ begin
 			sign_reg<=8'b00000000;
 		GetKey:
 			sign_reg<=8'b00000000;
-		/*KeyOK:
-			sign_reg<=8'b00000001;*/
-		/*Init:
-			sign_reg<=8'b00000010;*/
 		Moving_Secret:
-			sign_reg<=8'b00000100;
+			sign_reg<=8'b00000001;
 		Secret_Ready:
-			sign_reg<=8'b00010000;
+			sign_reg<=8'b00000010;
 		Error:
-			sign_reg<=8'b00100000;
+			sign_reg<=8'b00000100;
 		Total_RST:
-			sign_reg<=8'b01000000;
+			sign_reg<=8'b00001000;
 		default:
 		    sign_reg<=8'b00000000;
 		endcase
@@ -206,6 +201,11 @@ begin
 			err_cnt<=err_cnt;
 			encry_cnt<=encry_cnt;
 		end
+	end
+	Secret_Ready:
+	begin
+		encry_cnt<=0;
+		stream<=0;
 	end
 	Total_RST:
 	begin
