@@ -14,7 +14,6 @@ input logic [7:0] get_data,
 input logic [7:0] sign_reg
 );
 
-//logic [79:0] key = 80'hd8ad98aa04d01b630bb4;
 logic [79:0] key = 80'h00000000000000000000;
 logic [79:0] IV  = 80'h00000000000000000000;
 
@@ -22,12 +21,15 @@ logic [287:0] s;
 
 logic [7:0] t1,t2,t3,z; //trivium temporary regs
 
-logic [7:0] zerobytes [256]; 
-logic [7:0] zerobits [256];
+logic [7:0] sent [255]; 
 
-logic [7:0] recieved [256];
+logic [7:0] recieved [255];
 
-int k_num;
+logic [7:0] dechiphrated [255];
+
+
+
+int k_num, data_num, read_num;
 
 //initialise
 function void trivium_init();
@@ -84,124 +86,146 @@ s[184:177] = t2;
 
 return data;
 endfunction
-// Bitwise trivium
-function logic trivium_bit(logic data);
-t1[0] = s[65]^s[92];
-t2[0] = s[161]^s[176];
-t3[0] = s[242]^s[287];
-
-z[0] = t1[0]^t2[0]^t3[0];
-
-t1[0] = t1[0]^s[90]&s[91]^s[170];
-t2[0] = t2[0]^s[174]&s[175]^s[263];
-t3[0] = t3[0]^s[285]&s[286]^s[68];
-
-
-s[92:0] = s[92:0] << 1;
-s[176:93] = s[176:93] << 1;
-s[287:177] = s[287:177] << 1;
-	
-s[0] = t3[0];
-s[93] = t1[0];
-s[177] = t2[0];
-
-data=data^z[0];
-
-return data;
+//sending key
+task sendkey();
+@ (posedge clk)
+#1 st_key = 1;
+k_num = 0;
+while (k_num < 80)
+	begin
+	@ (posedge clk)
+	begin
+		#1
+		tr_key = key[79-k_num];
+		k_num++;
+	end
+	end
+st_key = 0;
+endtask
+//Sending data
+task senddata();
+st_dat = 1;
+data_num = 0;
+while(data_num < 255)
+begin @ (posedge clk)
+	begin
+	data = sent[data_num];
+	data_num++;
+	end
+end
+#1 st_dat = 0;
+endtask
+// Getting data from device
+task download();
+@ (posedge clk)
+#1 read = 1;
+read_num = 0;
+while(read_num < 255)
+begin @ (posedge clk)
+	begin
+	#1 recieved[read_num] = get_data;
+	read_num++;
+	end
+end
+#1 read = 0;
+endtask
+//generate random data
+function void produce();
+for(int i = 0; i < 255; i++)
+begin
+	sent[i] = $urandom_range(0,255);
+end
 endfunction
+//decipher and download
+function void dec_and_comp();
+
+for(int i = 0; i < 255; i++)
+begin
+	dechiphrated[i] = trivium_byte(recieved[i]);
+end
+
+for(int i = 0; i < 255; i++)
+begin
+	if(dechiphrated[i] !=sent[i])
+	begin
+		$display("Error at %d position of received data!",i);
+		break;
+	end
+	else if (i == 254)
+		$display("All bytes correct.");
+end
+endfunction
+
+//write to file
+function int result_file(int number);
+endfunction
+
+//write log
+function int log_file();
+endfunction
+//generate key
+function void prod_key();
+key = $urandom_range(0,80'h11111111111111111111);
+trivium_init();
+endfunction
+
+
 //#####################################################################
 initial begin
 rst = 1;
 clk = 0;
-trivium_init();
 
-for(int i = 0; i < 256; i++)
+fork
 begin
-	zerobytes[i] = trivium_byte(0);
+#8 rst = 0;
+st_key = 0;
+st_dat = 0;
+data = 0;
+tr_key = 0;
+read = 0;
+#8 rst = 1;
 end
 
-trivium_init();
-
-for(int i = 0; i < 256; i++)
-begin
-	for(int j = 0; j < 8; j++)
-		zerobits[i][j] = trivium_bit(0);
+forever begin
+#8 clk=~clk;
 end
-trivium_init();
-	fork
-	
-	begin
-	#8 rst = 0;
-	st_key = 0;
-	st_dat = 0;
-	data = 0;
-	tr_key = 0;
-	read = 0;
-	#8 rst = 1;
-	end
-	
-	forever begin
-	#8 clk=~clk;
-	end
-	
-	
-	
-	forever begin
-	#100
-		case(sign_reg)
-		8'h00: begin
-			@ (posedge clk)
-			#1 st_key = 1;
-			k_num = 0;
-			while (k_num < 80)
-			begin
-			@ (posedge clk)
-			begin
-				#1
-				tr_key = key[79-k_num];
-				k_num++;
-			end
-			end
-			st_key = 0;
-		end
-		
-		8'h04: begin
-			@ (posedge clk)
-			#1 st_dat = 1;
-			@ (posedge clk)
-				data = 0;
-			#1 st_dat = 0;
-		end
-		8'h10: begin
-			@ (posedge clk)
-			#1 read = 1;
-			k_num = 0; //Using k_num again, don't need another variable.
-			while(k_num < 256)
-			begin @ (posedge clk)
-					begin
-					#1 recieved[k_num] = get_data;
-					k_num++;
-					end
-			end
-			#1 read = 0;
-			
-			for(int i = 0; i < 256; i++)
-			begin
-				if(zerobits[i] !=recieved[i])
-				begin
-					$display("Error at %d position of received data!",i);
-					break;
-				end
-			end
-			
-		end
-		8'h20: begin
-			$display("Generate and send new key \n");
-		end
-		default: $display(sign_reg);
-		endcase
-	end
-	
-	join
+
+forever begin
+#100
+case(sign_reg)
+8'h04: begin
+	$display("Error \n");
+end
+
+8'h08: begin
+	$display("Total reset \n");
+end
+endcase
+end
+
+begin
+#100
+produce();
+prod_key();
+wait(sign_reg == 8'h00);
+sendkey();
+wait(sign_reg == 8'h01);
+senddata();
+wait(sign_reg == 8'h02);
+download();
+dec_and_comp();
+
+#100
+produce();
+prod_key();
+sendkey();
+wait(sign_reg == 8'h01);
+senddata();
+wait(sign_reg == 8'h02);
+download();
+dec_and_comp();
+end
+
+join
 end
 endprogram
