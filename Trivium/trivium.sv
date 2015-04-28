@@ -107,28 +107,23 @@ begin
 	end
 	Moving_Secret:
 	begin
-		if (err_cnt>=2**64-1)
-			nxt=NoKey;
-		else
-			if (encry_cnt == 8'b11111111)
-				nxt=Secret_Ready;
-			else
-				nxt=Moving_Secret;
+		if (strob_key)
+			nxt=Init;
+		else if (err_cnt>=2**64-1)
+				nxt=NoKey;
+			else if (encry_cnt == 8'b11111111)
+					nxt=Secret_Ready;
+				else
+					nxt=Moving_Secret;
 	end
 	Secret_Ready:
 	begin
 		if (strob_key)
-			nxt=GetKey;
-		else
-		begin
-			if (key_cnt==7'b1010000)
-				nxt=Init;
+			nxt=Init;
+		else if (fifo_cnd==2'b00)
+				nxt=Moving_Secret;
 			else
-				if (fifo_cnd==2'b00)
-					nxt=Moving_Secret;
-				else
-					nxt=Secret_Ready;
-		end
+				nxt=Secret_Ready;
 	end
 	Total_RST:
 		nxt=NoKey;
@@ -175,11 +170,7 @@ begin
 		Moving_Secret:
 		begin
 			if (strob_key)
-				if (key_cnt<7'b1010000)
-				begin
-					key_reg<={key_reg[78:0],key};
-					key_cnt<=key_cnt+1;
-				end
+				key_reg<={key_reg[78:0],key};
 		end
 		Secret_Ready:
 		begin
@@ -247,6 +238,7 @@ begin
 			reg_str_2<=reg_str_2;
 			reg_str_3<=reg_str_3;
 			wt_sgn<=0;
+			stream<=0;
 			err_cnt<=err_cnt;
 			encry_cnt<=encry_cnt;
 		end
