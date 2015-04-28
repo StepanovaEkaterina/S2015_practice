@@ -117,13 +117,18 @@ begin
 	end
 	Secret_Ready:
 	begin
-		if (key_cnt==7'b1010000)
-			nxt=Init;
+		if (strob_key)
+			nxt=GetKey;
 		else
-			if (fifo_cnd==2'b00)
-				nxt=Moving_Secret;
+		begin
+			if (key_cnt==7'b1010000)
+				nxt=Init;
 			else
-				nxt=Secret_Ready;
+				if (fifo_cnd==2'b00)
+					nxt=Moving_Secret;
+				else
+					nxt=Secret_Ready;
+		end
 	end
 	Total_RST:
 		nxt=NoKey;
@@ -179,11 +184,7 @@ begin
 		Secret_Ready:
 		begin
 			if (strob_key)
-				if (key_cnt<7'b1010000)
-				begin
-					key_reg<={key_reg[78:0],key};
-					key_cnt<=key_cnt+1;
-				end
+				key_reg<={key_reg[78:0],key};
 		end
 		Total_RST:
 		begin
