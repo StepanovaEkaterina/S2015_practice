@@ -1,6 +1,5 @@
-//описать состояние ошибки при неполном/переполненом ключе 
-//KeyOK, Init, Moving_Secret
-//ошибка с последним байтом в фифо
+//описать состояние ошибки при неполном/переполненом ключе
+//написать получение нового ключа.
 module Trivium
 (	input logic 			clk,
 	input logic 			rst,
@@ -63,18 +62,14 @@ begin
 			sign_reg<=8'b00000000;
 		GetKey:
 			sign_reg<=8'b00000000;
-		/*KeyOK:
-			sign_reg<=8'b00000001;*/
-		/*Init:
-			sign_reg<=8'b00000010;*/
 		Moving_Secret:
-			sign_reg<=8'b00000100;
+			sign_reg<=8'b00000001;
 		Secret_Ready:
-			sign_reg<=8'b00010000;
+			sign_reg<=8'b00000010;
 		Error:
-			sign_reg<=8'b00100000;
+			sign_reg<=8'b00000100;
 		Total_RST:
-			sign_reg<=8'b01000000;
+			sign_reg<=8'b00001000;
 		default:
 		    sign_reg<=8'b00000000;
 		endcase
@@ -124,19 +119,86 @@ begin
 	end
 	Secret_Ready:
 	begin
-		if (fifo_cnd==2'b00)
-			nxt=Moving_Secret;
+		if (key_cnt==7'b1010000)
+			nxt=Init;
 		else
-			nxt=Secret_Ready;
+			if (fifo_cnd==2'b00)
+				nxt=Moving_Secret;
+			else
+				nxt=Secret_Ready;
 	end
-	Error:
-		nxt=NoKey;
 	Total_RST:
 		nxt=NoKey;
 	default:
 		nxt=NoKey;
 	endcase
-end	
+end
+
+always_ff@(posedge clk, negedge rst)
+begin
+	if(!rst)
+	begin
+		key_cnt<=0;
+		key_reg<=0;
+	end
+	else
+		unique case(prev)
+		NoKey:
+			key_reg<={key_reg[78:0],key};
+		GetKey:
+		begin
+			if (key_cnt<7'b1010000)
+			begin
+				key_reg<={key_reg[78:0],key};
+				key_cnt<=key_cnt+1;
+			end
+		else
+			begin
+				key_reg<=key_reg;
+				key_cnt<=key_cnt;
+			end
+		end
+		KeyOK:
+			key_cnt<=0;
+		Init:
+		begin
+			if (strob_key)
+				if (key_cnt<7'b1010000)
+				begin
+					key_reg<={key_reg[78:0],key};
+					key_cnt<=key_cnt+1;
+				end
+		end
+		Moving_Secret:
+		begin
+			if (strob_key)
+				if (key_cnt<7'b1010000)
+				begin
+					key_reg<={key_reg[78:0],key};
+					key_cnt<=key_cnt+1;
+				end
+		end
+		Secret_Ready:
+		begin
+			if (strob_key)
+				if (key_cnt<7'b1010000)
+				begin
+					key_reg<={key_reg[78:0],key};
+					key_cnt<=key_cnt+1;
+				end
+		end
+		Total_RST:
+		begin
+			key_cnt<=0:
+			key_reg<=0;
+		end
+		default:
+		begin
+			key_cnt<=key_cnt;
+			key_reg<=key_reg;
+		end
+		endcase
+end
 
 always_ff@(posedge clk, negedge rst)
 begin
@@ -149,29 +211,12 @@ begin
 	reg_str_3<=0;
 	cnt_init<=0;
 	err_cnt<=0;
-	key_cnt<=0;
 	encry_cnt<=0;
-	key_reg<=0;
   end
   else
   begin
 	wt_sgn<=0;
 	unique case(prev)
-	NoKey:
-		key_reg<={key_reg[78:0],key};
-	GetKey:
-	begin
-		if (key_cnt<7'b1010000)
-		begin
-			key_reg<={key_reg[78:0],key};
-			key_cnt<=key_cnt+1;
-		end
-		else
-		begin
-			key_reg<=key_reg;
-			key_cnt<=key_cnt;
-		end
-	end
 	KeyOK:
 	begin
 		reg_str_1[77:0]<=key_reg[79:2];
@@ -207,6 +252,11 @@ begin
 			encry_cnt<=encry_cnt;
 		end
 	end
+	Secret_Ready:
+	begin
+		encry_cnt<=0;
+		stream<=0;
+	end
 	Total_RST:
 	begin
 		reg_str_1<=0;
@@ -226,9 +276,7 @@ begin
 		reg_str_3<=reg_str_3;
 		cnt_init<=cnt_init;
 		err_cnt<=err_cnt;
-		key_cnt<=key_cnt;
 		encry_cnt<=encry_cnt;
-		key_reg<=key_reg;
 	end
   endcase
   end

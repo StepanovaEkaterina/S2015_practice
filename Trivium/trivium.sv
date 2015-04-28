@@ -1,5 +1,3 @@
-//описать состояние ошибки при неполном/переполненом ключе
-//написать получение нового ключа.
 module Trivium
 (	input logic 			clk,
 	input logic 			rst,
@@ -119,19 +117,86 @@ begin
 	end
 	Secret_Ready:
 	begin
-		if (fifo_cnd==2'b00)
-			nxt=Moving_Secret;
+		if (key_cnt==7'b1010000)
+			nxt=Init;
 		else
-			nxt=Secret_Ready;
+			if (fifo_cnd==2'b00)
+				nxt=Moving_Secret;
+			else
+				nxt=Secret_Ready;
 	end
-	Error:
-		nxt=NoKey;
 	Total_RST:
 		nxt=NoKey;
 	default:
 		nxt=NoKey;
 	endcase
-end	
+end
+
+always_ff@(posedge clk, negedge rst)
+begin
+	if(!rst)
+	begin
+		key_cnt<=0;
+		key_reg<=0;
+	end
+	else
+		unique case(prev)
+		NoKey:
+			key_reg<={key_reg[78:0],key};
+		GetKey:
+		begin
+			if (key_cnt<7'b1010000)
+			begin
+				key_reg<={key_reg[78:0],key};
+				key_cnt<=key_cnt+1;
+			end
+		else
+			begin
+				key_reg<=key_reg;
+				key_cnt<=key_cnt;
+			end
+		end
+		KeyOK:
+			key_cnt<=0;
+		Init:
+		begin
+			if (strob_key)
+				if (key_cnt<7'b1010000)
+				begin
+					key_reg<={key_reg[78:0],key};
+					key_cnt<=key_cnt+1;
+				end
+		end
+		Moving_Secret:
+		begin
+			if (strob_key)
+				if (key_cnt<7'b1010000)
+				begin
+					key_reg<={key_reg[78:0],key};
+					key_cnt<=key_cnt+1;
+				end
+		end
+		Secret_Ready:
+		begin
+			if (strob_key)
+				if (key_cnt<7'b1010000)
+				begin
+					key_reg<={key_reg[78:0],key};
+					key_cnt<=key_cnt+1;
+				end
+		end
+		Total_RST:
+		begin
+			key_cnt<=0;
+			key_reg<=0;
+		end
+		default:
+		begin
+			key_cnt<=key_cnt;
+			key_reg<=key_reg;
+		end
+		endcase
+end
 
 always_ff@(posedge clk, negedge rst)
 begin
@@ -144,29 +209,12 @@ begin
 	reg_str_3<=0;
 	cnt_init<=0;
 	err_cnt<=0;
-	key_cnt<=0;
 	encry_cnt<=0;
-	key_reg<=0;
   end
   else
   begin
 	wt_sgn<=0;
 	unique case(prev)
-	NoKey:
-		key_reg<={key_reg[78:0],key};
-	GetKey:
-	begin
-		if (key_cnt<7'b1010000)
-		begin
-			key_reg<={key_reg[78:0],key};
-			key_cnt<=key_cnt+1;
-		end
-		else
-		begin
-			key_reg<=key_reg;
-			key_cnt<=key_cnt;
-		end
-	end
 	KeyOK:
 	begin
 		reg_str_1[77:0]<=key_reg[79:2];
@@ -226,9 +274,7 @@ begin
 		reg_str_3<=reg_str_3;
 		cnt_init<=cnt_init;
 		err_cnt<=err_cnt;
-		key_cnt<=key_cnt;
 		encry_cnt<=encry_cnt;
-		key_reg<=key_reg;
 	end
   endcase
   end
@@ -245,5 +291,4 @@ begin
     end
 end
 
-endmodule	
-
+endmodule
