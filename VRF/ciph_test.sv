@@ -165,7 +165,9 @@ function int log_file();
 endfunction
 //generate key
 function void prod_key();
-key = $urandom_range(0,80'h11111111111111111111);
+key[31:0] = $urandom;
+key[63:32] = $urandom;
+key[79:64] = $urandom_range(0,16'hffff);
 trivium_init();
 endfunction
 
