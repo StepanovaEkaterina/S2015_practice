@@ -27,8 +27,8 @@ module Trivium
 	logic [79:0] 			key_reg; //Регистр ключа шифрования
 	logic					strob_data_tmp;
 		
-	enum logic [5:0] {NoKey, GetKey, KeyOK, Init, Moving_Secret, Secret_Ready, Error, Total_RST} nxt, prev;
-
+	enum logic [5:0] {NoKey, GetKey, KeyOK, Init, Moving_Secret, Secret_Ready, Error, Error_Key, Total_RST} nxt, prev;
+/*Переприсвоение состояний*/
 always_ff@(posedge clk, negedge rst)
 begin
 	if (!rst)
@@ -36,6 +36,7 @@ begin
 	else
 		prev<=nxt;
 end
+/*Безопасный приём данных*/
 always_ff@(posedge clk, negedge rst)
 begin
 	if (!rst)
@@ -49,6 +50,7 @@ begin
 		data_reg<=data;
 	end
 end
+/*Определение состояния статусного регистра*/
 always_ff@(posedge clk, negedge rst)
 begin
 	if (!rst)
@@ -66,14 +68,16 @@ begin
 			sign_reg<=8'b00000010;
 		Error:
 			sign_reg<=8'b00000100;
-		Total_RST:
+		Error_Key:
 			sign_reg<=8'b00001000;
+		Total_RST:
+			sign_reg<=8'b00010000;
 		default:
 		    sign_reg<=8'b00000000;
 		endcase
 	end
 end
-
+/*Описание переходов конечного автомата*/
 always_comb
 begin
 	unique case (prev)
@@ -82,35 +86,46 @@ begin
 		if (strob_key)
 			nxt=GetKey;
 		else
-		begin
-			if (strob_data)
-				nxt=Total_RST;
-			else
-			  nxt=NoKey;
-		end
+			nxt=NoKey;
 	end
 	GetKey:
 	begin
-		if (!strob_key)
-			nxt=KeyOK;
-		else 
+		/*if (strob_key)
 			nxt=GetKey;
+		else
+			nxt=KeyOK;*/
+		if (key_cnt<7'b1001111)
+			if (strob_key)
+				nxt=GetKey;
+			else
+				nxt=Error_Key;
+		else if (strob_key)
+				nxt=Error_Key;
+			else
+				nxt=KeyOK;
 	end
 	KeyOK:
-		nxt=Init;
+	begin
+		if (strob_key)
+			nxt=GetKey;
+		else
+			nxt=Init;
+	end
 	Init:
 	begin
-		if (cnt_init<11'b10001111111)
-			nxt=Init;
-		else
-			nxt=Moving_Secret;
+		if (strob_key)
+			nxt=Error_Key;
+		else if (cnt_init<11'b10001111111)
+				nxt=Init;
+			else
+				nxt=Moving_Secret;
 	end
 	Moving_Secret:
 	begin
 		if (strob_key)
-			nxt=Init;
+			nxt=GetKey;
 		else if (err_cnt>=2**64-1)
-				nxt=NoKey;
+				nxt=Error;
 			else if (encry_cnt == 8'b11111111)
 					nxt=Secret_Ready;
 				else
@@ -118,20 +133,29 @@ begin
 	end
 	Secret_Ready:
 	begin
-		if (strob_key)
-			nxt=Init;
-		else if (fifo_cnd==2'b00)
-				nxt=Moving_Secret;
-			else
-				nxt=Secret_Ready;
+		if (fifo_cnd==2'b00)
+			nxt=Moving_Secret;
+		else
+			nxt=Secret_Ready;
 	end
+	Error:
+	begin
+		if (strob_data)
+			nxt=Total_RST;
+		else if (strob_key)
+				nxt=GetKey;
+			else
+				nxt=Error;
+	end
+	Error_Key:
+		nxt=NoKey;
 	Total_RST:
 		nxt=NoKey;
 	default:
 		nxt=NoKey;
 	endcase
 end
-
+/*Получение ключа в разных состояниях автомата*/
 always_ff@(posedge clk, negedge rst)
 begin
 	if(!rst)
@@ -157,25 +181,25 @@ begin
 			end
 		end
 		KeyOK:
-			key_cnt<=0;
-		Init:
 		begin
+			key_cnt<=0;
 			if (strob_key)
-				if (key_cnt<7'b1010000)
-				begin
-					key_reg<={key_reg[78:0],key};
-					key_cnt<=key_cnt+1;
-				end
+				key_reg<={key_reg[78:0],key};
 		end
 		Moving_Secret:
 		begin
 			if (strob_key)
 				key_reg<={key_reg[78:0],key};
 		end
-		Secret_Ready:
+		Error:
 		begin
 			if (strob_key)
 				key_reg<={key_reg[78:0],key};
+		end
+		Error_Key:
+		begin
+			key_cnt<=0;
+			key_reg<=0;
 		end
 		Total_RST:
 		begin
@@ -189,7 +213,7 @@ begin
 		end
 		endcase
 end
-
+/*Блок шифрования и обновления счетчиков накопления и ошибок*/
 always_ff@(posedge clk, negedge rst)
 begin
   if (!rst)
@@ -222,6 +246,7 @@ begin
 	end
 	Moving_Secret:
 	begin
+	cnt_init<=0;
 		if (strob_data_tmp)
 		begin
 			reg_str_1<={reg_str_1[84:0],t_3};
@@ -272,7 +297,7 @@ begin
   endcase
   end
 end
-
+/*Комбинационный блок для состояния шифрования*/
 always_comb
 begin
   for(int i=0;i<8;i++)
@@ -283,5 +308,4 @@ begin
       t_3[i]=reg_str_3[65-i]^reg_str_3[110-i]^reg_str_3[108-i]&reg_str_3[109-i]^reg_str_1[68-i];
     end
 end
-
 endmodule
