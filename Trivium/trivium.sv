@@ -231,6 +231,12 @@ begin
   begin
 	wt_sgn<=0;
 	unique case(prev)
+	GetKey:
+	begin
+		reg_str_1<=0;
+		reg_str_2<=0;
+		reg_str_3<=0;
+	end
 	KeyOK:
 	begin
 		reg_str_1[77:0]<=key_reg[79:2];

@@ -226,6 +226,16 @@ senddata();
 wait(sign_reg == 8'h02);
 download();
 dec_and_comp();
+
+#100
+produce();
+prod_key();
+sendkey();
+wait(sign_reg == 8'h01);
+senddata();
+wait(sign_reg == 8'h02);
+download();
+dec_and_comp();
 end
 
 join
