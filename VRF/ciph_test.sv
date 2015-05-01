@@ -27,11 +27,11 @@ logic [7:0] recieved [255];
 
 logic [7:0] dechiphrated [255];
 
-
+int log, session;
 
 int k_num, data_num, read_num;
 
-//initialise
+//initialise#############################################################################
 function void trivium_init();
 s[77:0] = key[79:2];
 s[92:78] = 0;
@@ -54,7 +54,7 @@ begin
 	s[177] = t2[0];
 end
 endfunction;
-//bytewise trivium
+//bytewise trivium#######################################################################
 function logic [7:0] trivium_byte(logic [7:0] data);
 
 for(int i = 0; i<8; i++)
@@ -86,7 +86,7 @@ s[184:177] = t2;
 
 return data;
 endfunction
-//sending key
+//sending key##########################################################################
 task sendkey();
 @ (posedge clk)
 #1 st_key = 1;
@@ -102,7 +102,7 @@ while (k_num < 80)
 	end
 st_key = 0;
 endtask
-//Sending data
+//Sending data######################################################################
 task senddata();
 st_dat = 1;
 data_num = 0;
@@ -115,7 +115,7 @@ begin @ (posedge clk)
 end
 #1 st_dat = 0;
 endtask
-// Getting data from device
+// Getting data from device###############################################################
 task download();
 @ (posedge clk)
 #1 read = 1;
@@ -129,15 +129,16 @@ begin @ (posedge clk)
 end
 #1 read = 0;
 endtask
-//generate random data
+//generate random data################################################################
 function void produce();
 for(int i = 0; i < 255; i++)
 begin
 	sent[i] = $urandom_range(0,255);
 end
 endfunction
-//decipher and download
-function void dec_and_comp();
+//decipher and download################################################################
+function int dec_and_comp();
+int errcode;
 
 for(int i = 0; i < 255; i++)
 begin
@@ -148,22 +149,72 @@ for(int i = 0; i < 255; i++)
 begin
 	if(dechiphrated[i] !=sent[i])
 	begin
-		$display("Error at %d position of received data!",i);
+		errcode = i;
 		break;
 	end
 	else if (i == 254)
-		$display("All bytes correct.");
+		errcode = 999;
 end
+return errcode;
 endfunction
 
-//write to file
-function int result_file(int number);
+//write to file#######################################################################
+function void result_file(string filename);
+session = $fopen(filename, "w");
+if(session == 0)
+		$display("Unable to open file.");
+$fwrite(session,"Ключ:\n");
+$fwrite(session,"%h\n",key);
+$fwrite(session,"\nОтправленные данные:\n");
+for(int i = 0; i < 16; i++)
+begin
+	for(int j = 0; j < 16; j++)
+	begin
+	$fwrite(session,"%h ",sent[16*i+j]);
+	end
+	$fwrite(session,"\n");
+end
+$fwrite(session,"\nПринятые данные:\n");
+for(int i = 0; i < 16; i++)
+begin
+	for(int j = 0; j < 16; j++)
+	begin
+	$fwrite(session,"%h ",recieved[16*i+j]);
+	end
+	$fwrite(session,"\n");
+end
+$fwrite(session,"\nРасшифрованные данные:\n");
+for(int i = 0; i < 16; i++)
+begin
+	for(int j = 0; j < 16; j++)
+	begin
+	$fwrite(session,"%h ",dechiphrated[16*i+j]);
+	end
+	$fwrite(session,"\n");
+end
+$fclose(session);
 endfunction
 
-//write log
-function int log_file();
+//write log###########################################################################
+function void log_file(int result, string tcase,string refer);
+log = $fopen("test_log.txt","a+");
+if(log == 0)
+		$display("Unable to open file.");
+$fwrite(log,"%s:\n",tcase);
+if(result != 999)
+begin
+	$fwrite (log,"Error at position %d of received data.\n", result);
+	$fwrite (log,"See file \"%s\" for more.\n\n", refer);
+end
+else
+begin
+	$fwrite(log,"Device works properly.\n");
+	$fwrite (log,"See file \"%s\" for more.\n\n", refer);
+end
+$fclose(log);
 endfunction
-//generate key
+
+//generate key######################################################################
 function void prod_key();
 key[31:0] = $urandom;
 key[63:32] = $urandom;
@@ -204,7 +255,7 @@ end
 end
 endcase
 end
-
+//Main testing block##########################################################
 begin
 #100
 produce();
@@ -215,7 +266,8 @@ wait(sign_reg == 8'h01);
 senddata();
 wait(sign_reg == 8'h02);
 download();
-dec_and_comp();
+log_file(dec_and_comp(),"Normal work test","first.txt");
+result_file("first.txt");
 
 #100
 produce();
@@ -225,17 +277,10 @@ wait(sign_reg == 8'h01);
 senddata();
 wait(sign_reg == 8'h02);
 download();
-dec_and_comp();
+log_file(dec_and_comp(),"One more normal work test","second.txt");
+result_file("second.txt");
 
-#100
-produce();
-prod_key();
-sendkey();
-wait(sign_reg == 8'h01);
-senddata();
-wait(sign_reg == 8'h02);
-download();
-dec_and_comp();
+
 end
 
 join
