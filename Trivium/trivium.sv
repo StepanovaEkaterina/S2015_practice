@@ -14,7 +14,7 @@ module Trivium
 	logic [92:0] 			reg_str_1;
 	logic [83:0] 			reg_str_2;
 	logic [110:0] 			reg_str_3; 
-	logic [79:0] 			vector=80'h00000000000000000000; //Вектор инициализации
+	logic [79:0] 			vector=80'hc686715b56d470466509; //Вектор инициализации
 	logic [0:7] 			t_1, t_2, t_3;
 	logic [7:0]     		z;
 			
