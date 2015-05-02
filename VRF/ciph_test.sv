@@ -280,7 +280,67 @@ download();
 log_file(dec_and_comp(),"One more normal work test","second.txt");
 result_file("second.txt");
 
+#100
+produce();
+prod_key();
+sendkey();
+wait(sign_reg == 8'h01);
+senddata();
+sendkey();
+wait(sign_reg == 8'h02);
+download();
+log_file(dec_and_comp(),"Sending and key","third.txt");
+result_file("third.txt");
 
+#100
+produce();
+prod_key();
+sendkey();
+wait(sign_reg == 8'h01);
+senddata();
+wait(sign_reg == 8'h02);
+sendkey();
+download();
+log_file(dec_and_comp(),"Download and key","4.txt");
+result_file("4.txt");
+
+#100
+produce();
+prod_key();
+sendkey();
+wait(sign_reg == 8'h01);
+senddata();
+sendkey();
+wait(sign_reg == 8'h02);
+download();
+log_file(dec_and_comp(),"Sending and key forked","third_1.txt");
+result_file("third_1.txt");
+
+#100
+produce();
+prod_key();
+sendkey();
+wait(sign_reg == 8'h01);
+senddata();
+wait(sign_reg == 8'h02);
+fork
+	sendkey();
+	download();
+join
+log_file(dec_and_comp(),"Download and key forked","4_1.txt");
+result_file("4_1.txt");
+
+#100
+produce();
+prod_key();
+fork
+	sendkey();
+	senddata();
+	download();
+join
+download();
+log_file(dec_and_comp(),"All 3 operations at onece","5.txt");
+result_file("5.txt");
 end
 
 join
