@@ -17,18 +17,18 @@ logic [255:0][7:0] fifomem; //������ ������
 
 //Read from fifo
  always_ff@(posedge clk, negedge rst) 
-	if (!rst) 
+	if (!rst)
+	begin 
 		dout <= 0;
-	else if (read_stb == 1'b1 && condition != 2'b00)
-		dout <= fifomem[tail];
- always_ff@(posedge clk, negedge rst) 
-	if (!rst) 
 		read_stb <= 0;
+	end
 	else if (read == 1'b1 && condition != 2'b00)
+	begin
+		dout <= fifomem[tail];
 		read_stb<=1;
-		else 
-		read_stb<=0;
-		
+	end
+		else
+		read_stb<=0;	
 //assign dout = fifomem[tail];
 
 // Update FIFO memory.

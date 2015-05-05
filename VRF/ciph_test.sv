@@ -104,14 +104,13 @@ st_key = 0;
 endtask
 //Sending data######################################################################
 task senddata();
-st_dat = 1;
 data_num = 0;
 while(data_num < 255)
-begin @ (posedge clk)
-	begin
+begin 
+	st_dat = 1;
 	data = sent[data_num];
 	data_num++;
-	end
+	@ (posedge clk);
 end
 #1 st_dat = 0;
 endtask
