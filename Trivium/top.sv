@@ -8,7 +8,8 @@ module top
 	input logic STB_KEY,
 	
 	output logic [7:0] DATA_OUT,
-	output logic [7:0] SIGN_REG);
+	output logic [7:0] SIGN_REG,
+	output logic STB_READ);
 	
 	wire [7:0] STREAM;
 	wire WRITE;
@@ -35,5 +36,6 @@ fifo FIFO_DEV
 	.write(WRITE),
 	
 	.dout(DATA_OUT),
-	.condition(CONDITION));
+	.condition(CONDITION),
+	.read_stb(STB_READ));
 endmodule

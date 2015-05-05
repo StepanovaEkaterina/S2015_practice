@@ -6,7 +6,8 @@ module fifo
 	input logic write,
 	
 	output logic [7:0] dout,
-	output logic [1:0] condition);
+	output logic [1:0] condition,
+	output logic read_stb);
 
 logic [7:0] tail; //�����
 logic [7:0] head; //������
@@ -19,7 +20,14 @@ logic [255:0][7:0] fifomem; //������ ������
 	if (!rst) 
 		dout <= 0;
 	else if (read == 1'b1 && condition != 2'b00)
-		dout <= fifomem[tail]; 
+		dout <= fifomem[tail];
+ always_ff@(posedge clk, negedge rst) 
+	if (!rst) 
+		read_stb <= 0;
+	else if (read == 1'b1 && condition != 2'b00)
+		read_stb<=1;
+		else 
+		read_stb<=0;
 		
 //assign dout = fifomem[tail];
 
