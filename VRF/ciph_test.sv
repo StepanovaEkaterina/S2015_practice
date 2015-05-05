@@ -3,29 +3,29 @@
 program ciph_test(
 output logic clk,
 output logic rst,
-output logic tr_key,
+output logic tr_key, //sending key thru this
 output logic [7:0] data,
-output logic read,
-output logic st_dat,
-output logic st_key,
+output logic read, //reading strobe
+output logic st_dat, //data strobe
+output logic st_key, //key strobe
 
 
 input logic [7:0] get_data,
 input logic [7:0] sign_reg
 );
 
-logic [79:0] key = 80'h00000000000000000000;
-logic [79:0] IV  = 80'hc686715b56d470466509;
+logic [79:0] key = 80'h00000000000000000000; //key variable
+logic [79:0] IV  = 80'hc686715b56d470466509; //ID vector
 
-logic [287:0] s;
+logic [287:0] s; // shifting register
 
 logic [7:0] t1,t2,t3,z; //trivium temporary regs
 
-logic [7:0] sent [255]; 
+logic [7:0] sent [255]; // array of generated data
 
-logic [7:0] recieved [255];
+logic [7:0] recieved [255]; //array of received data
 
-logic [7:0] dechiphrated [255];
+logic [7:0] dechiphrated [255]; //array of deciphrated data
 
 int log, session;
 
@@ -71,7 +71,6 @@ begin
 	t1[7-i] = t1[7-i]^s[90-i]&s[91-i]^s[170-i];
 	t2[7-i] = t2[7-i]^s[174-i]&s[175-i]^s[263-i];
 	t3[7-i] = t3[7-i]^s[285-i]&s[286-i]^s[68-i];
-	
 end
 
 data=data^z;
@@ -222,7 +221,6 @@ key[79:64] = $urandom_range(0,16'hffff);
 trivium_init();
 endfunction
 
-
 //#####################################################################
 initial begin
 rst = 1;
@@ -255,6 +253,7 @@ end
 end
 endcase
 end
+
 //Main testing block##########################################################
 begin
 #100
@@ -266,8 +265,8 @@ wait(sign_reg == 8'h01);
 senddata();
 wait(sign_reg == 8'h02);
 download();
-log_file(dec_and_comp(),"Normal work test","first.txt");
-result_file("first.txt");
+log_file(dec_and_comp(),"Normal work test","1.txt");
+result_file("1.txt");
 
 #100
 produce();
@@ -277,8 +276,8 @@ wait(sign_reg == 8'h01);
 senddata();
 wait(sign_reg == 8'h02);
 download();
-log_file(dec_and_comp(),"One more normal work test","second.txt");
-result_file("second.txt");
+log_file(dec_and_comp(),"One more normal work test","2.txt");
+result_file("2.txt");
 
 #100
 produce();
@@ -289,8 +288,8 @@ senddata();
 sendkey();
 wait(sign_reg == 8'h02);
 download();
-log_file(dec_and_comp(),"Sending and key","third.txt");
-result_file("third.txt");
+log_file(dec_and_comp(),"Sending and key","3.txt");
+result_file("3.txt");
 
 #100
 produce();
@@ -313,8 +312,8 @@ senddata();
 sendkey();
 wait(sign_reg == 8'h02);
 download();
-log_file(dec_and_comp(),"Sending and key forked","third_1.txt");
-result_file("third_1.txt");
+log_file(dec_and_comp(),"Sending and key forked","3_1.txt");
+result_file("3_1.txt");
 
 #100
 produce();
@@ -339,7 +338,7 @@ fork
 	download();
 join
 download();
-log_file(dec_and_comp(),"All 3 operations at onece","5.txt");
+log_file(dec_and_comp(),"All 3 operations at once","5.txt");
 result_file("5.txt");
 end
 
