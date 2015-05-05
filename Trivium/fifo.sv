@@ -19,7 +19,7 @@ logic [255:0][7:0] fifomem; //������ ������
  always_ff@(posedge clk, negedge rst) 
 	if (!rst) 
 		dout <= 0;
-	else if (read == 1'b1 && condition != 2'b00)
+	else if (read_stb == 1'b1 && condition != 2'b00)
 		dout <= fifomem[tail];
  always_ff@(posedge clk, negedge rst) 
 	if (!rst) 
@@ -55,7 +55,7 @@ always_ff@(posedge clk, negedge rst)
 	if (!rst)
 		tail <= 0;
 	else 
-		if (read == 1'b1 && condition != 2'b00) 
+		if (read_stb == 1'b1 && condition != 2'b00) 
 // READ 
 			tail <= tail + 1;
 
@@ -65,7 +65,7 @@ always_ff@(posedge clk, negedge rst)
 	if (!rst) 
 		count <= 0;
 	else 
-		case ({read, write})
+		case ({read_stb, write})
 		2'b00: count <= count;
 		2'b01: if (condition != 2'b11) //WRITE 
 				count <= count + 1;

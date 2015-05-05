@@ -11,7 +11,8 @@ output logic st_key, //key strobe
 
 
 input logic [7:0] get_data,
-input logic [7:0] sign_reg
+input logic [7:0] sign_reg,
+input logic in_strobe
 );
 
 logic [79:0] key = 80'h00000000000000000000; //key variable
@@ -121,9 +122,10 @@ task download();
 read_num = 0;
 while(read_num < 255)
 begin @ (posedge clk)
+	if(in_strobe == 1)
 	begin
-	#1 recieved[read_num] = get_data;
-	read_num++;
+		#1 recieved[read_num] = get_data;
+		read_num++;
 	end
 end
 #1 read = 0;
@@ -337,6 +339,7 @@ fork
 	senddata();
 	download();
 join
+$display("Something wrong");
 download();
 log_file(dec_and_comp(),"All 3 operations at once","5.txt");
 result_file("5.txt");
