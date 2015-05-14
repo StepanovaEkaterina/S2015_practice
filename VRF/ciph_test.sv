@@ -107,12 +107,13 @@ task senddata();
 data_num = 0;
 while(data_num < 255)
 begin 
+	@ (posedge clk); #1;
 	st_dat = 1;
 	data = sent[data_num];
 	data_num++;
-	@ (posedge clk);
+	
 end
-#1 st_dat = 0;
+#26 st_dat = 0;
 endtask
 // Getting data from device###############################################################
 task download();
@@ -239,7 +240,7 @@ read = 0;
 end
 
 forever begin
-#8 clk=~clk;
+#13 clk=~clk;
 end
 
 forever begin

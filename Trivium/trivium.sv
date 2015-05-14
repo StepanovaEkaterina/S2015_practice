@@ -1,3 +1,4 @@
+/*написать состояние готов получать данные*/
 module Trivium
 (	input logic 			clk,
 	input logic 			rst,

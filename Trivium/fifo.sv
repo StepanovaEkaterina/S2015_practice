@@ -55,7 +55,7 @@ always_ff@(posedge clk, negedge rst)
 	if (!rst)
 		tail <= 0;
 	else 
-		if (read_stb == 1'b1 && condition != 2'b00) 
+		if (read == 1'b1 && condition != 2'b00) 
 // READ 
 			tail <= tail + 1;
 
