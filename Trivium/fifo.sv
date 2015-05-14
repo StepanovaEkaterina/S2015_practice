@@ -48,6 +48,8 @@ always_ff@(posedge clk, negedge rst)
 		if (write == 1'b1 && condition != 2'b11) 
 // WRITE
 			head <= head + 1;
+		else if (condition == 2'b00)
+			head <= 0;
 
 // Update the tail register.
 
@@ -58,6 +60,8 @@ always_ff@(posedge clk, negedge rst)
 		if (read == 1'b1 && condition != 2'b00) 
 // READ 
 			tail <= tail + 1;
+		else if (condition == 2'b00)
+			tail <= 0;
 
 // Update the count register.
 
