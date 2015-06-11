@@ -91,10 +91,6 @@ begin
 	end
 	GetKey:
 	begin
-		/*if (strob_key)
-			nxt=GetKey;
-		else
-			nxt=KeyOK;*/
 		if (key_cnt<7'b1001111)
 			if (strob_key)
 				nxt=GetKey;
@@ -108,18 +104,16 @@ begin
 	KeyOK:
 	begin
 		if (strob_key)
-			nxt=GetKey;
+			nxt=Error_Key;
 		else
 			nxt=Init;
 	end
 	Init:
 	begin
-		if (strob_key)
-			nxt=Error_Key;
-		else if (cnt_init<11'b10001111111)
-				nxt=Init;
-			else
-				nxt=Moving_Secret;
+		if (cnt_init<11'b10001111111)
+			nxt=Init;
+		else
+			nxt=Moving_Secret;
 	end
 	Moving_Secret:
 	begin
@@ -243,6 +237,7 @@ begin
 		reg_str_1[77:0]<=key_reg[79:2];
 		reg_str_2[79:0]<=vector;
 		reg_str_3[110:108]<=3'b111;
+		encry_cnt<=0;
 	end
 	Init:
 	begin
