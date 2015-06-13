@@ -105,13 +105,12 @@ endtask
 //Sending data######################################################################
 task senddata();
 data_num = 0;
+st_dat = 1;
 while(data_num < 255)
 begin 
-	@ (posedge clk); #1;
-	st_dat = 1;
+	@ (posedge clk);
 	data = sent[data_num];
 	data_num++;
-	
 end
 #26 st_dat = 0;
 endtask
@@ -122,7 +121,7 @@ task download();
 read_num = 0;
 while(read_num < 255)
 begin @ (posedge clk)
-	if(in_strobe == 1)
+//	if(in_strobe == 1)
 	begin
 		#1 recieved[read_num] = get_data;
 		read_num++;

@@ -15,7 +15,8 @@ module top
 	wire WRITE;
 	wire [1:0] CONDITION;
 	
-Trivium ENCR_DEV
+//Trivium ENCR_DEV
+TLM_trivium ENCR_DEV
 (	.clk(CLK),
 	.rst(RST),
 	.key(KEY),
@@ -28,7 +29,8 @@ Trivium ENCR_DEV
 	.wt_sgn(WRITE),
 	.sign_reg(SIGN_REG));
 	
-fifo FIFO_DEV
+//fifo FIFO_DEV
+TLM_fifo FIFO_DEV
 (	.clk(CLK),
 	.rst(RST),
 	.din(STREAM),
